@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
@@ -20,10 +20,29 @@ export function PdfViewer({ file }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pageHeight, setPageHeight] = useState<number | undefined>(undefined);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
   }
+
+  useEffect(() => {
+    const updatePageHeight = () => {
+      if (containerRef.current) {
+        // Calculate the effective height available for the PDF page
+        // Subtract vertical padding from the container's height
+        const style = getComputedStyle(containerRef.current);
+        const paddingTop = parseInt(style.paddingTop, 10);
+        const paddingBottom = parseInt(style.paddingBottom, 10);
+        setPageHeight(containerRef.current.clientHeight - paddingTop - paddingBottom);
+      }
+    };
+
+    updatePageHeight();
+    window.addEventListener('resize', updatePageHeight);
+    return () => window.removeEventListener('resize', updatePageHeight);
+  }, []);
 
   return (
     <motion.div 
@@ -79,26 +98,31 @@ export function PdfViewer({ file }: PdfViewerProps) {
       </motion.div>
 
       {/* Main Canvas Area */}
-      <div className="flex-1 w-full overflow-y-auto custom-scrollbar p-8 md:p-16 flex justify-center bg-gradient-to-b from-transparent to-black/20">
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccess}
-          className="outline-none"
-          loading={
-            <div className="h-full flex flex-col items-center justify-center space-y-4">
-               <div className="w-1 h-12 bg-gradient-to-b from-transparent via-blue-500 to-transparent opacity-50 animate-pulse" />
-               <p className="text-xs text-zinc-600 font-mono uppercase tracking-widest">Decrypting PDF...</p>
-            </div>
-          }
-        >
-          <Page 
-            pageNumber={pageNumber} 
-            scale={scale} 
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
-            className="bg-transparent" 
-          />
-        </Document>
+      <div 
+        ref={containerRef} 
+        className="flex-1 w-full overflow-hidden flex justify-center py-8 md:py-16" // Added py-8 and md:py-16 for responsiveness
+      >
+        {pageHeight && ( // Only render Document if pageHeight is calculated
+          <Document
+            file={file}
+            onLoadSuccess={onDocumentLoadSuccess}
+            className="outline-none h-full" // Ensure Document takes full height
+            loading={
+              <div className="h-full flex flex-col items-center justify-center space-y-4">
+                <div className="w-1 h-12 bg-gradient-to-b from-transparent via-blue-500 to-transparent opacity-50 animate-pulse" />
+                <p className="text-xs text-zinc-600 font-mono uppercase tracking-widest">Decrypting PDF...</p>
+              </div>
+            }
+          >
+            <Page 
+              pageNumber={pageNumber} 
+              height={pageHeight} // Pass the calculated height
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+              className="bg-transparent" 
+            />
+          </Document>
+        )}
       </div>
     </motion.div>
   );

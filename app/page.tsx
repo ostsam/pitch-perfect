@@ -74,15 +74,15 @@ export default function Home() {
               className="flex-1 flex flex-col items-center justify-center p-6 relative"
             >
               {/* Hero Text */}
-              <div className="text-center space-y-8 max-w-4xl mb-12 relative z-20">
+              <div className="text-center space-y-6 max-w-4xl mb-8 relative z-20">
                  <motion.div
                    initial={{ y: 20, opacity: 0 }}
                    animate={{ y: 0, opacity: 1 }}
                    transition={{ delay: 0.2, duration: 0.8 }}
-                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-sm"
+                   className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-sm"
                  >
-                   <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">
-                     V2.0 Now Live
+                   <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400">
+                     V2.0 Live
                    </span>
                  </motion.div>
 
@@ -92,16 +92,16 @@ export default function Home() {
                    transition={{ delay: 0.3, duration: 0.8 }}
                    className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/40"
                  >
-                   Pitch like <br/> your life depends on it.
+                   Pitch like your life depends on it.
                  </motion.h1>
 
                  <motion.p 
                    initial={{ y: 20, opacity: 0 }}
                    animate={{ y: 0, opacity: 1 }}
                    transition={{ delay: 0.4, duration: 0.8 }}
-                   className="text-lg text-zinc-400 max-w-xl mx-auto leading-relaxed font-light"
+                   className="text-md text-zinc-400 max-w-md mx-auto leading-relaxed font-light"
                  >
-                   The merciless AI coach that interrupts, critiques, and refines your delivery in real-time.
+                   The merciless AI coach that critiques and refines your delivery in real-time.
                  </motion.p>
               </div>
 
