@@ -28,20 +28,20 @@ export function PdfViewer({ file }: PdfViewerProps) {
   }
 
   useEffect(() => {
-    const updatePageHeight = () => {
-      if (containerRef.current) {
-        // Calculate the effective height available for the PDF page
-        // Subtract vertical padding from the container's height
-        const style = getComputedStyle(containerRef.current);
-        const paddingTop = parseInt(style.paddingTop, 10);
-        const paddingBottom = parseInt(style.paddingBottom, 10);
-        setPageHeight(containerRef.current.clientHeight - paddingTop - paddingBottom);
-      }
-    };
+    if (!containerRef.current) return;
 
-    updatePageHeight();
-    window.addEventListener('resize', updatePageHeight);
-    return () => window.removeEventListener('resize', updatePageHeight);
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect) {
+          // Use content rect height. Subtract small buffer for borders/shadows (e.g. 20px)
+          setPageHeight(entry.contentRect.height - 20); 
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
   }, []);
 
   return (
@@ -49,48 +49,47 @@ export function PdfViewer({ file }: PdfViewerProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
-      className="relative w-full h-full flex flex-col items-center"
+      className="relative w-full h-full flex flex-col items-center bg-[#080808]"
     >
       {/* Floating Control Pill */}
       <motion.div 
-        initial={{ y: 50, opacity: 0 }}
+        initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="absolute bottom-10 z-50"
+        className="absolute bottom-6 z-50 pointer-events-auto"
       >
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl ring-1 ring-black/50">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-black/90 backdrop-blur-xl border border-white/10 rounded-full shadow-lg">
           <button
             onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
             disabled={pageNumber <= 1}
-            className="p-2 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white disabled:opacity-20 transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white disabled:opacity-20 transition-colors"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3 h-3" />
           </button>
           
-          <span className="text-xs font-medium font-mono text-zinc-500 min-w-[3rem] text-center tabular-nums">
-            {pageNumber} / {numPages || "-"}
+          <span className="text-[10px] font-medium font-mono text-zinc-500 min-w-[2rem] text-center tabular-nums">
+            {pageNumber}/{numPages || "-"}
           </span>
           
           <button
             onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))}
             disabled={pageNumber >= numPages}
-            className="p-2 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white disabled:opacity-20 transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white disabled:opacity-20 transition-colors"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3 h-3" />
           </button>
 
           <div className="w-px h-3 bg-white/10 mx-1" />
 
           <button
             onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))}
-            className="p-2 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors"
           >
             <ZoomOut className="w-3 h-3" />
           </button>
           
           <button
             onClick={() => setScale((prev) => Math.min(prev + 0.1, 2.0))}
-            className="p-2 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors"
           >
             <ZoomIn className="w-3 h-3" />
           </button>
@@ -100,26 +99,25 @@ export function PdfViewer({ file }: PdfViewerProps) {
       {/* Main Canvas Area */}
       <div 
         ref={containerRef} 
-        className="flex-1 w-full overflow-hidden flex justify-center py-8 md:py-16" // Added py-8 and md:py-16 for responsiveness
+        className="flex-1 w-full h-full overflow-auto flex items-center justify-center p-4 custom-scrollbar"
       >
-        {pageHeight && ( // Only render Document if pageHeight is calculated
+        {pageHeight && (
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
-            className="outline-none h-full" // Ensure Document takes full height
+            className="outline-none flex items-center justify-center"
             loading={
-              <div className="h-full flex flex-col items-center justify-center space-y-4">
-                <div className="w-1 h-12 bg-gradient-to-b from-transparent via-blue-500 to-transparent opacity-50 animate-pulse" />
-                <p className="text-xs text-zinc-600 font-mono uppercase tracking-widest">Decrypting PDF...</p>
+              <div className="flex flex-col items-center gap-2">
+                 <div className="w-4 h-4 border-2 border-white/20 border-t-blue-500 rounded-full animate-spin" />
               </div>
             }
           >
             <Page 
               pageNumber={pageNumber} 
-              height={pageHeight} // Pass the calculated height
+              height={pageHeight * scale} 
               renderTextLayer={false}
               renderAnnotationLayer={false}
-              className="bg-transparent" 
+              className="bg-white shadow-2xl border border-white/5 rounded-sm overflow-hidden" 
             />
           </Document>
         )}

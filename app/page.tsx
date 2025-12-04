@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { FileUpload } from "@/components/file-upload";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Play, ArrowLeft, Aperture, Activity } from "lucide-react";
+import { Mic, Play, ArrowLeft, Aperture, Activity, Camera } from "lucide-react";
 import { RoastFeed } from "@/components/roast-feed";
+import { Orb } from "@/components/orb";
+import { CameraFeed } from "@/components/camera-feed";
 import { cn } from "@/lib/utils";
 
 const PdfViewer = dynamic(() => import("@/components/pdf-viewer").then((mod) => mod.PdfViewer), {
@@ -27,156 +29,115 @@ export default function Home() {
   return (
     <main className="h-screen w-full bg-[#020202] text-white overflow-hidden flex flex-col selection:bg-white/20">
       
-      {/* Ambient Background Mesh - Subtle Aurora */}
+      {/* Ambient Background Mesh */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-50%] left-[-20%] w-[80%] h-[80%] rounded-full bg-blue-900/10 blur-[150px] animate-pulse duration-[10000ms]" />
-        <div className="absolute bottom-[-50%] right-[-20%] w-[80%] h-[80%] rounded-full bg-indigo-900/10 blur-[150px]" />
+        <div className="absolute top-[-50%] left-[-20%] w-[80%] h-[80%] rounded-full bg-blue-900/05 blur-[150px] animate-pulse duration-[10000ms]" />
       </div>
 
       {/* Navbar */}
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-50 flex-none px-8 py-6 flex items-center justify-between"
+        className="relative z-50 flex-none px-8 py-4 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm"
       >
-        <div className="flex items-center gap-3 group cursor-pointer">
-          <div className="relative w-8 h-8 flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-lg blur-sm group-hover:blur-md transition-all" />
-            <div className="relative bg-black border border-white/10 rounded-lg w-full h-full flex items-center justify-center">
-              <Aperture className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-700" />
-            </div>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setFile(null); setIsRoasting(false); }}>
+          <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center border border-white/10">
+            <Aperture className="w-3 h-3 text-white" />
           </div>
-          <span className="font-medium text-sm tracking-wide text-zinc-300 group-hover:text-white transition-colors">
-            Pitch Perfect <span className="opacity-30 ml-2 font-normal">AI Coach</span>
+          <span className="font-medium text-sm tracking-wide text-zinc-300">
+            Pitch Perfect
           </span>
         </div>
 
-        <div className="flex items-center gap-6">
-           <div className="hidden md:flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-zinc-600">
-             <div className="w-1.5 h-1.5 rounded-full bg-green-500/50 animate-pulse" />
-             System Online
+        {file && (
+           <div className="flex items-center gap-4">
+             <button 
+               onClick={() => setIsRoasting(!isRoasting)}
+               className={cn(
+                 "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2",
+                 isRoasting 
+                  ? "bg-red-600 text-white hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]" 
+                  : "bg-white text-black hover:bg-zinc-200"
+               )}
+             >
+               {isRoasting ? "Live Session" : "Start Session"}
+             </button>
            </div>
-           <div className="w-8 h-8 rounded-full bg-gradient-to-b from-white/10 to-transparent border border-white/5" />
-        </div>
+        )}
       </motion.header>
 
       {/* Content Stage */}
-      <div className="flex-1 relative z-10 flex flex-col">
+      <div className="flex-1 relative z-10 flex flex-col min-h-0">
         <AnimatePresence mode="wait">
           {!file ? (
             <motion.div 
               key="hero"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
-              transition={{ duration: 0.8 }}
+              exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
+              transition={{ duration: 0.5 }}
               className="flex-1 flex flex-col items-center justify-center p-6 relative"
             >
               {/* Hero Text */}
-              <div className="text-center space-y-6 max-w-4xl mb-8 relative z-20">
-                 <motion.div
-                   initial={{ y: 20, opacity: 0 }}
-                   animate={{ y: 0, opacity: 1 }}
-                   transition={{ delay: 0.2, duration: 0.8 }}
-                   className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-sm"
-                 >
-                   <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400">
-                     V2.0 Live
-                   </span>
-                 </motion.div>
-
+              <div className="text-center space-y-6 max-w-4xl mb-12 relative z-20">
                  <motion.h1 
                    initial={{ y: 20, opacity: 0 }}
                    animate={{ y: 0, opacity: 1 }}
-                   transition={{ delay: 0.3, duration: 0.8 }}
                    className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/40"
                  >
                    Pitch like your life depends on it.
                  </motion.h1>
-
-                 <motion.p 
-                   initial={{ y: 20, opacity: 0 }}
-                   animate={{ y: 0, opacity: 1 }}
-                   transition={{ delay: 0.4, duration: 0.8 }}
-                   className="text-md text-zinc-400 max-w-md mx-auto leading-relaxed font-light"
-                 >
-                   The merciless AI coach that critiques and refines your delivery in real-time.
-                 </motion.p>
               </div>
 
               {/* Upload Zone */}
               <motion.div
                 initial={{ y: 40, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
+                transition={{ delay: 0.2 }}
                 className="w-full max-w-xl relative z-20"
               >
                 <FileUpload onFileSelect={setFile} />
               </motion.div>
-
             </motion.div>
           ) : (
             <motion.div 
               key="workspace"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 flex flex-col"
+              className="flex-1 grid grid-cols-12 gap-6 p-6 min-h-0"
             >
-              {/* Control Bar */}
-              <div className="absolute top-0 left-0 right-0 z-50 px-8 py-4 flex items-center justify-between pointer-events-none">
-                 <motion.button
-                   initial={{ x: -20, opacity: 0 }}
-                   animate={{ x: 0, opacity: 1 }}
-                   onClick={() => {
-                     setFile(null);
-                     setIsRoasting(false);
-                   }}
-                   className="pointer-events-auto flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors group"
-                 >
-                   <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                   <span className="font-medium">Exit Session</span>
-                 </motion.button>
-
-                 <motion.div 
-                   initial={{ y: -20, opacity: 0 }}
-                   animate={{ y: 0, opacity: 1 }}
-                   className="pointer-events-auto flex items-center gap-3 p-1.5 rounded-full bg-[#0a0a0a]/90 border border-white/10 shadow-2xl backdrop-blur-xl"
-                 >
-                   <button className="px-4 py-2 rounded-full text-xs font-medium text-zinc-400 hover:bg-white/5 hover:text-white transition-all flex items-center gap-2">
-                     <Mic className="w-3 h-3" />
-                     Mic Check
-                   </button>
-                   
-                   <button 
-                     onClick={() => setIsRoasting(!isRoasting)}
-                     className={cn(
-                       "px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 shadow-lg",
-                       isRoasting 
-                        ? "bg-red-600 text-white shadow-red-900/20 hover:bg-red-500" 
-                        : "bg-white text-black shadow-white/10 hover:bg-zinc-200"
-                     )}
-                   >
-                     {isRoasting ? (
-                       <>
-                         <Activity className="w-3 h-3 animate-pulse" />
-                         Live
-                       </>
-                     ) : (
-                       <>
-                         <Play className="w-3 h-3 fill-current" />
-                         Start
-                       </>
-                     )}
-                   </button>
-                 </motion.div>
-              </div>
-
-              {/* Main View */}
-              <div className="flex-1 relative w-full h-full bg-[#050505]">
+              {/* LEFT: PDF Viewer (6 cols - 50%) */}
+              <div className="col-span-6 h-full rounded-2xl border border-white/10 bg-[#050505] overflow-hidden shadow-2xl relative flex flex-col">
                 <PdfViewer file={file} />
-                <RoastFeed isActive={isRoasting} />
               </div>
+
+              {/* CENTER: Orb (3 cols - 25%) */}
+              <div className="col-span-3 h-full flex flex-col items-center justify-center relative">
+                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/5 to-transparent pointer-events-none" />
+                 <Orb active={isRoasting} />
+                 <div className="absolute bottom-10 text-center space-y-2 opacity-50">
+                    <p className="text-[10px] font-mono uppercase tracking-widest">AI Status</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className={cn("w-1.5 h-1.5 rounded-full", isRoasting ? "bg-blue-500 animate-pulse" : "bg-zinc-700")} />
+                      <span className="text-xs font-medium text-zinc-400">{isRoasting ? "Listening..." : "Idle"}</span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* RIGHT: Camera (3 cols - 25%) */}
+              <div className="col-span-3 h-full flex flex-col gap-4">
+                 <div className="flex-1 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl relative">
+                    <CameraFeed active={isRoasting} />
+                 </div>
+                 
+                 {/* Roast Feed below camera */}
+                 <div className="h-1/3 relative rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden p-4">
+                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 pointer-events-none z-10" />
+                   <h3 className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-4 border-b border-white/5 pb-2">Live Critique</h3>
+                   <RoastFeed isActive={isRoasting} />
+                 </div>
+              </div>
+
             </motion.div>
           )}
         </AnimatePresence>
