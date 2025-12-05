@@ -41,7 +41,17 @@ export default function Home() {
 	const roastsRef = useRef<RoastMessage[]>([]);
 	const isAnalyzingRef = useRef<boolean>(false);
 	const isSpeakingRef = useRef<boolean>(false);
+	const isSpeechPendingRef = useRef<boolean>(false);
+	const speechTimeoutRef = useRef<number | null>(null);
+	const analysisDebounceRef = useRef<NodeJS.Timeout | null>(null);
+	const utteranceTimerRef = useRef<NodeJS.Timeout | null>(null);
 	const transcriptRef = useRef<string>("");
+	const lastConsumedIdxRef = useRef<number>(0);
+	const lastAnalyzedLenRef = useRef<number>(0);
+	const lastAnalysisAtRef = useRef<number>(0);
+	const lastRoastAtRef = useRef<number>(0);
+	const partialCacheRef = useRef<string>("");
+	const utteranceBufferRef = useRef<string>("");
 	const faceDataRef = useRef<FaceData | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const audioContextRef = useRef<AudioContext | null>(null);
@@ -53,7 +63,27 @@ export default function Home() {
 	// Connection refs
 	const socketRef = useRef<WebSocket | null>(null);
 	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-	const analysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+	const clearSpeechTimeout = () => {
+		if (speechTimeoutRef.current !== null) {
+			clearTimeout(speechTimeoutRef.current);
+			speechTimeoutRef.current = null;
+		}
+	};
+
+	const clearAnalysisDebounce = useCallback(() => {
+		if (analysisDebounceRef.current) {
+			clearTimeout(analysisDebounceRef.current);
+			analysisDebounceRef.current = null;
+		}
+	}, []);
+
+	const clearUtteranceTimer = useCallback(() => {
+		if (utteranceTimerRef.current) {
+			clearTimeout(utteranceTimerRef.current);
+			utteranceTimerRef.current = null;
+		}
+	}, []);
 
 	useEffect(() => {
 		setMounted(true);
@@ -159,6 +189,18 @@ export default function Home() {
 	);
 
 	const triggerRoast = useCallback(async (text: string) => {
+		// Block additional roasts immediately (before network/stream starts)
+		isSpeechPendingRef.current = true;
+		clearSpeechTimeout();
+		speechTimeoutRef.current = window.setTimeout(() => {
+			// Fail-safe: if playback never starts, unblock analysis
+			isSpeechPendingRef.current = false;
+			isSpeakingRef.current = false;
+			if (audioRef.current) {
+				audioRef.current.pause();
+			}
+		}, 3000);
+
 		console.log("🔥 ROAST TRIGGERED:", text);
 
 		// Add to UI
@@ -200,16 +242,22 @@ export default function Home() {
 				isSpeakingRef.current = true;
 				audioEl.onended = () => {
 					isSpeakingRef.current = false;
+					isSpeechPendingRef.current = false;
+					clearSpeechTimeout();
 					URL.revokeObjectURL(url);
 				};
 				audioEl.onpause = () => {
-					if (audioEl.paused) {
-						isSpeakingRef.current = false;
-						URL.revokeObjectURL(url);
+					// Attempt to resume if paused unexpectedly
+					if (audioEl.paused && !audioEl.ended) {
+						audioEl.play().catch(() => {
+							/* swallow */
+						});
 					}
 				};
 				audioEl.play().catch(() => {
 					isSpeakingRef.current = false;
+					isSpeechPendingRef.current = false;
+					clearSpeechTimeout();
 					URL.revokeObjectURL(url);
 				});
 			} else {
@@ -219,6 +267,8 @@ export default function Home() {
 
 				const cleanSpeakingFlags = () => {
 					isSpeakingRef.current = false;
+					isSpeechPendingRef.current = false;
+					clearSpeechTimeout();
 					audioEl.onended = null;
 					audioEl.onpause = null;
 					URL.revokeObjectURL(objectUrl);
@@ -226,7 +276,12 @@ export default function Home() {
 
 				audioEl.onended = cleanSpeakingFlags;
 				audioEl.onpause = () => {
-					if (audioEl.paused) cleanSpeakingFlags();
+					// If paused unexpectedly, attempt to resume instead of treating as end
+					if (audioEl.paused && !audioEl.ended) {
+						audioEl.play().catch(() => {
+							/* swallow */
+						});
+					}
 				};
 
 				mediaSource.addEventListener("sourceopen", () => {
@@ -243,6 +298,8 @@ export default function Home() {
 							isSpeakingRef.current = true;
 							audioEl.play().catch(() => {
 								isSpeakingRef.current = false;
+								isSpeechPendingRef.current = false;
+								clearSpeechTimeout();
 								URL.revokeObjectURL(url);
 							});
 						});
@@ -287,12 +344,16 @@ export default function Home() {
 									queue.push(value);
 									if (!started) {
 										started = true;
-										// brief buffer (~0.5s) before play for stability
+										// brief buffer (~0.25s) before play for stability
 										setTimeout(() => {
 											if (audioEl && !audioEl.paused) return;
 											isSpeakingRef.current = true;
+											isSpeechPendingRef.current = false;
+											clearSpeechTimeout();
 											audioEl.play().catch(() => {
 												isSpeakingRef.current = false;
+												isSpeechPendingRef.current = false;
+												clearSpeechTimeout();
 											});
 										}, 500);
 									}
@@ -321,19 +382,45 @@ export default function Home() {
 
 			// Clear transcript buffer so we don't re-analyze old mistakes
 			transcriptRef.current = "";
+			// Record roast time and reset transcript buffer so we don't re-analyze old text
+			lastRoastAtRef.current = Date.now();
+			transcriptRef.current = "";
+			lastConsumedIdxRef.current = 0;
+			lastAnalyzedLenRef.current = 0;
+			utteranceBufferRef.current = "";
+			partialCacheRef.current = "";
 		} catch (error) {
 			console.error("Failed to speak:", error);
 			isSpeakingRef.current = false;
+			isSpeechPendingRef.current = false;
+			clearSpeechTimeout();
 		}
 	}, []);
 
 	const analyzePitch = useCallback(async () => {
 		// Don't interrupt if already speaking
-		if (isSpeakingRef.current) return;
+		if (isSpeakingRef.current || isSpeechPendingRef.current) return;
 		if (audioRef.current && !audioRef.current.paused) return;
 		if (isAnalyzingRef.current) return;
 
-		const transcript = transcriptRef.current.slice(-500); // Last ~500 chars
+		// Enforce minimum interval between analyses
+		const now = Date.now();
+		const minIntervalMs = 1500;
+		if (now - lastAnalysisAtRef.current < minIntervalMs) return;
+
+		// Only analyze new transcript since last pass
+		const fullTranscript = transcriptRef.current;
+		if (fullTranscript.length <= lastAnalyzedLenRef.current) return;
+
+		const transcriptDelta = fullTranscript.slice(lastConsumedIdxRef.current);
+		if (!transcriptDelta.trim() && !faceDataRef.current) return; // Nothing new
+
+		// Require a minimal utterance length to avoid fragmentary roasts
+		const minChars = 24;
+		if (transcriptDelta.trim().length < minChars && !faceDataRef.current)
+			return;
+
+		const transcript = transcriptDelta.slice(-500); // focus on recent delta
 		const faceData = faceDataRef.current;
 		const currentPdfText = pdfTextRef.current; // full deck
 		const pageText = pageTextsRef.current[currentPageRef.current - 1] || "";
@@ -349,6 +436,10 @@ export default function Home() {
 		}
 
 		if (!transcript.trim() && !faceData) return; // Nothing to analyze
+
+		// Cool-down after a roast
+		const roastCooldownMs = 3000;
+		if (now - lastRoastAtRef.current < roastCooldownMs) return;
 
 		// Format emotion string
 		let emotionData = "No face detected";
@@ -387,8 +478,35 @@ export default function Home() {
 			console.error("Brain glitch:", error);
 		} finally {
 			isAnalyzingRef.current = false;
+			lastAnalysisAtRef.current = Date.now();
+			lastAnalyzedLenRef.current = transcriptRef.current.length;
+			lastConsumedIdxRef.current = transcriptRef.current.length;
 		}
 	}, [triggerRoast]);
+
+	const scheduleAnalysis = useCallback(
+		(delayMs = 0) => {
+			if (analysisDebounceRef.current) {
+				clearTimeout(analysisDebounceRef.current);
+			}
+			analysisDebounceRef.current = setTimeout(() => {
+				analysisDebounceRef.current = null;
+				analyzePitch();
+			}, delayMs);
+		},
+		[analyzePitch]
+	);
+
+	const startUtteranceTimer = useCallback(
+		(delayMs = 1200) => {
+			clearUtteranceTimer();
+			utteranceTimerRef.current = setTimeout(() => {
+				utteranceTimerRef.current = null;
+				scheduleAnalysis(0);
+			}, delayMs);
+		},
+		[clearUtteranceTimer, scheduleAnalysis]
+	);
 
 	// 2. Deepgram & Microphone Setup
 	useEffect(() => {
@@ -396,8 +514,6 @@ export default function Home() {
 			// Cleanup
 			socketRef.current?.close();
 			mediaRecorderRef.current?.stop();
-			if (analysisIntervalRef.current)
-				clearInterval(analysisIntervalRef.current);
 			return;
 		}
 
@@ -434,26 +550,56 @@ export default function Home() {
 								}
 							});
 
-							mediaRecorder.start(250); // Send chunks every 250ms
+							mediaRecorder.start(100); // Send chunks every ~100ms for lower latency
 						});
 				};
 
 				socket.onmessage = (message) => {
 					const received = JSON.parse(message.data);
-					const transcript = received.channel?.alternatives[0]?.transcript;
-					if (transcript && received.is_final) {
-						transcriptRef.current += " " + transcript;
-						// Keep transcript buffer manageable (last 1000 chars)
-						if (transcriptRef.current.length > 2000) {
-							transcriptRef.current = transcriptRef.current.slice(-2000);
-						}
+					const alt = received.channel?.alternatives?.[0];
+					const transcript = alt?.transcript?.trim();
+					if (!transcript) return;
+
+					const isFinal = !!received.is_final;
+
+					// Compute delta against prior partial to avoid duplicate text from cumulative hypotheses
+					let delta = transcript;
+					const lastPartial = partialCacheRef.current;
+					if (!isFinal && lastPartial && transcript.startsWith(lastPartial)) {
+						delta = transcript.slice(lastPartial.length);
+					} else if (
+						isFinal &&
+						lastPartial &&
+						transcript.startsWith(lastPartial)
+					) {
+						delta = transcript.slice(lastPartial.length);
 					}
+
+					if (!isFinal) {
+						partialCacheRef.current = transcript;
+					} else {
+						partialCacheRef.current = "";
+					}
+
+					if (delta.trim()) {
+						utteranceBufferRef.current += utteranceBufferRef.current
+							? " " + delta
+							: delta;
+						transcriptRef.current = utteranceBufferRef.current;
+					}
+
+					// Trigger analysis: immediate if long enough, otherwise debounce and timer
+					if (utteranceBufferRef.current.trim().length >= 80) {
+						scheduleAnalysis(0);
+					} else {
+						scheduleAnalysis(0);
+					}
+
+					// Restart utterance end timer to detect pauses
+					startUtteranceTimer(1300);
 				};
 
 				socketRef.current = socket;
-
-				// D. Start Analysis Loop (The "Brain")
-				analysisIntervalRef.current = setInterval(analyzePitch, 4000); // Check every 4 seconds
 			} catch (error) {
 				console.error("Failed to start session:", error);
 				setIsRoasting(false);
@@ -467,10 +613,20 @@ export default function Home() {
 			mediaRecorderRef.current?.stop();
 			stopAudioAnalysis();
 			micStreamRef.current?.getTracks().forEach((track) => track.stop());
-			if (analysisIntervalRef.current)
-				clearInterval(analysisIntervalRef.current);
+			clearAnalysisDebounce();
+			clearUtteranceTimer();
 		};
-	}, [analyzePitch, isRoasting, file, startAudioAnalysis, stopAudioAnalysis]);
+	}, [
+		analyzePitch,
+		isRoasting,
+		file,
+		startAudioAnalysis,
+		stopAudioAnalysis,
+		clearAnalysisDebounce,
+		scheduleAnalysis,
+		clearUtteranceTimer,
+		startUtteranceTimer,
+	]);
 
 	const handleFaceData = (data: FaceData | null) => {
 		faceDataRef.current = data;

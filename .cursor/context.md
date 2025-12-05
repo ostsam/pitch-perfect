@@ -37,3 +37,17 @@ Session 2025-12-05: Added streaming TTS playback with MediaSource and brief buff
 
 Session 2025-12-05: Updated OpenAI system prompt to wrap roast text with tone markers `[angry>` prefix and `<screaming]` suffix for aggressive delivery.
 
+Session 2025-12-05: Tightened roast timing—MediaRecorder sends ~100ms chunks; analyzePitch now gated by new transcript delta + min interval, with single-flight TTS pending flag, incremental transcript consumption, and 7s post-roast cooldown to prevent stacked/late playback.
+
+Session 2025-12-05: Further latency tuning—MediaSource preplay buffer trimmed to ~250ms, analyzePitch interval floor lowered to 1.5s with a 2s check loop, and roast cooldown tightened to ~5s to react faster while keeping single-flight safety.
+
+Session 2025-12-05: Latency pass 2—roast cooldown reduced to ~3s; added 3s fail-safe timeout to clear pending/speaking if playback never starts; ensured timeout clears on end/pause/error for faster recovery.
+
+Session 2025-12-05: Prevented user speech from stopping roasts—on unexpected audio pause, we now attempt to resume playback instead of clearing speaking flags; flags still clear on natural end/error/timeouts.
+
+Session 2025-12-05: Reduced premature roasts—track last transcript time; require ~2.5s silence and minimum 40-char delta before analysis to avoid firing during ongoing speech fragments.
+
+Session 2025-12-05: Simplified realtime pipeline—removed analysis interval; debounce (~500ms) on new final transcripts triggers analysis with minimal (24 char) delta requirement and 1.5s min interval; single-flight TTS preserved.
+
+Session 2025-12-05: Utterance buffering—collect partial/final transcripts with a 1.3s utterance timer; analyze after debounce or when buffer grows, enabling mid-sentence interrupts; cleans partial cache/buffer on roast.
+
