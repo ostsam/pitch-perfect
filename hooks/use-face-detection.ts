@@ -27,7 +27,7 @@ export interface UseFaceDetectionOptions {
 }
 
 export function useFaceDetection(
-  videoRef: React.RefObject<HTMLVideoElement>,
+  videoRef: React.RefObject<HTMLVideoElement | null>,
   options: UseFaceDetectionOptions
 ) {
   const [isModelLoaded, setIsModelLoaded] = useState(false);
