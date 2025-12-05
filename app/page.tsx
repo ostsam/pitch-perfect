@@ -29,13 +29,18 @@ export default function Home() {
 	const [file, setFile] = useState<File | null>(null);
 	const [isRoasting, setIsRoasting] = useState(false);
 	const [mounted, setMounted] = useState(false);
-	const [roasts, setRoasts] = useState<RoastMessage[]>([]);
 	const [micVolume, setMicVolume] = useState(0);
 	const [showCamera, setShowCamera] = useState(false);
 
 	// State for the "Brain"
 	const [currentFaceData, setCurrentFaceData] = useState<FaceData | null>(null); // For UI rendering
 	const pdfTextRef = useRef<string>(""); // Ref for the interval to access fresh data
+	const pageTextsRef = useRef<string[]>([]);
+	const deckSummaryRef = useRef<string>("");
+	const currentPageRef = useRef<number>(1);
+	const roastsRef = useRef<RoastMessage[]>([]);
+	const isAnalyzingRef = useRef<boolean>(false);
+	const isSpeakingRef = useRef<boolean>(false);
 	const transcriptRef = useRef<string>("");
 	const faceDataRef = useRef<FaceData | null>(null);
 	const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -59,6 +64,8 @@ export default function Home() {
 	useEffect(() => {
 		if (!file) {
 			pdfTextRef.current = "";
+			pageTextsRef.current = [];
+			deckSummaryRef.current = "";
 			return;
 		}
 
@@ -73,11 +80,15 @@ export default function Home() {
 				});
 				const data = await res.json();
 				if (data.text) {
-					pdfTextRef.current = data.text; // Update ref
+					pdfTextRef.current = data.text; // full deck text
+					deckSummaryRef.current = data.summary || data.text.slice(0, 1200);
 					console.log(
 						"📄 PDF Context Loaded:",
 						data.text.slice(0, 100) + "..."
 					);
+				}
+				if (Array.isArray(data.pages)) {
+					pageTextsRef.current = data.pages;
 				}
 			} catch (error) {
 				console.error("Failed to extract PDF text:", error);
@@ -157,43 +168,182 @@ export default function Home() {
 			severity: "critical",
 			timestamp: Date.now(),
 		};
-		setRoasts((prev) => [...prev, newRoast]);
+		roastsRef.current = [...roastsRef.current, newRoast];
 
-		// Play Audio
+		// Play Audio (streaming with brief buffer for stability)
 		try {
-			// We fetch the stream then play it.
-			// Since audio elements need a source, we can fetch as blob.
 			const res = await fetch("/api/speak", {
 				method: "POST",
 				body: JSON.stringify({ text }),
 			});
 
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
+			if (!res.ok || !res.body) {
+				throw new Error("No audio stream");
+			}
 
-			if (audioRef.current) {
-				audioRef.current.src = url;
-				audioRef.current.play();
+			if (!audioRef.current) {
+				audioRef.current = new Audio();
+			}
+
+			const audioEl = audioRef.current;
+			const mimeType = "audio/mpeg";
+			const supportsMSE =
+				typeof MediaSource !== "undefined" &&
+				MediaSource.isTypeSupported &&
+				MediaSource.isTypeSupported(mimeType);
+
+			if (!supportsMSE) {
+				// Fallback: blob (non-streaming) to avoid runtime errors on unsupported browsers
+				const blob = await res.blob();
+				const url = URL.createObjectURL(blob);
+				audioEl.src = url;
+				isSpeakingRef.current = true;
+				audioEl.onended = () => {
+					isSpeakingRef.current = false;
+					URL.revokeObjectURL(url);
+				};
+				audioEl.onpause = () => {
+					if (audioEl.paused) {
+						isSpeakingRef.current = false;
+						URL.revokeObjectURL(url);
+					}
+				};
+				audioEl.play().catch(() => {
+					isSpeakingRef.current = false;
+					URL.revokeObjectURL(url);
+				});
+			} else {
+				const mediaSource = new MediaSource();
+				const objectUrl = URL.createObjectURL(mediaSource);
+				audioEl.src = objectUrl;
+
+				const cleanSpeakingFlags = () => {
+					isSpeakingRef.current = false;
+					audioEl.onended = null;
+					audioEl.onpause = null;
+					URL.revokeObjectURL(objectUrl);
+				};
+
+				audioEl.onended = cleanSpeakingFlags;
+				audioEl.onpause = () => {
+					if (audioEl.paused) cleanSpeakingFlags();
+				};
+
+				mediaSource.addEventListener("sourceopen", () => {
+					let sourceBuffer: SourceBuffer;
+					try {
+						sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+					} catch (e) {
+						console.error("SourceBuffer init failed, falling back to blob", e);
+						mediaSource.endOfStream();
+						URL.revokeObjectURL(objectUrl);
+						res.blob().then((blob) => {
+							const url = URL.createObjectURL(blob);
+							audioEl.src = url;
+							isSpeakingRef.current = true;
+							audioEl.play().catch(() => {
+								isSpeakingRef.current = false;
+								URL.revokeObjectURL(url);
+							});
+						});
+						return;
+					}
+
+					const reader = res.body!.getReader();
+
+					const queue: Uint8Array[] = [];
+					let appending = false;
+					let done = false;
+					let started = false;
+
+					const appendNext = () => {
+						if (appending) return;
+						const chunk = queue.shift();
+						if (!chunk) {
+							if (done && !appending && mediaSource.readyState === "open") {
+								try {
+									mediaSource.endOfStream();
+								} catch {
+									/* noop */
+								}
+							}
+							return;
+						}
+						appending = true;
+						const safeChunk = new Uint8Array(chunk); // ensure non-shared buffer
+						sourceBuffer.appendBuffer(safeChunk);
+					};
+
+					sourceBuffer.addEventListener("updateend", () => {
+						appending = false;
+						appendNext();
+					});
+
+					const pump = async () => {
+						try {
+							while (true) {
+								const { value, done: streamDone } = await reader.read();
+								if (value) {
+									queue.push(value);
+									if (!started) {
+										started = true;
+										// brief buffer (~0.5s) before play for stability
+										setTimeout(() => {
+											if (audioEl && !audioEl.paused) return;
+											isSpeakingRef.current = true;
+											audioEl.play().catch(() => {
+												isSpeakingRef.current = false;
+											});
+										}, 500);
+									}
+									appendNext();
+								}
+								if (streamDone) {
+									done = true;
+									appendNext();
+									break;
+								}
+							}
+						} catch (err) {
+							console.error("Stream read error:", err);
+							try {
+								mediaSource.endOfStream();
+							} catch {
+								/* noop */
+							}
+							cleanSpeakingFlags();
+						}
+					};
+
+					pump();
+				});
 			}
 
 			// Clear transcript buffer so we don't re-analyze old mistakes
 			transcriptRef.current = "";
 		} catch (error) {
 			console.error("Failed to speak:", error);
+			isSpeakingRef.current = false;
 		}
 	}, []);
 
 	const analyzePitch = useCallback(async () => {
 		// Don't interrupt if already speaking
+		if (isSpeakingRef.current) return;
 		if (audioRef.current && !audioRef.current.paused) return;
+		if (isAnalyzingRef.current) return;
 
 		const transcript = transcriptRef.current.slice(-500); // Last ~500 chars
 		const faceData = faceDataRef.current;
-		const currentPdfText = pdfTextRef.current; // Use ref here
+		const currentPdfText = pdfTextRef.current; // full deck
+		const pageText = pageTextsRef.current[currentPageRef.current - 1] || "";
+		const deckSummary =
+			deckSummaryRef.current ||
+			(currentPdfText ? currentPdfText.slice(0, 1200) : "");
 
 		// If no PDF text yet, we can't really judge context, but we can judge emotion.
 		// However, the API requires pdfContext.
-		if (!currentPdfText) {
+		if (!currentPdfText && !pageText && !deckSummary) {
 			console.log("Waiting for PDF text...");
 			return;
 		}
@@ -216,13 +366,15 @@ export default function Home() {
 		}
 
 		try {
+			isAnalyzingRef.current = true;
 			const res = await fetch("/api/analyze-pitch", {
 				method: "POST",
 				body: JSON.stringify({
 					transcript,
 					emotionData,
-					pdfContext: currentPdfText,
-					previousRoasts: roasts.map((r) => r.text),
+					pageText,
+					deckSummary,
+					previousRoasts: roastsRef.current.map((r) => r.text),
 				}),
 			});
 
@@ -233,8 +385,10 @@ export default function Home() {
 			}
 		} catch (error) {
 			console.error("Brain glitch:", error);
+		} finally {
+			isAnalyzingRef.current = false;
 		}
-	}, [roasts, triggerRoast]);
+	}, [triggerRoast]);
 
 	// 2. Deepgram & Microphone Setup
 	useEffect(() => {
@@ -323,6 +477,10 @@ export default function Home() {
 		setCurrentFaceData(data);
 	};
 
+	const handlePageChange = (page: number) => {
+		currentPageRef.current = page;
+	};
+
 	if (!mounted) return null;
 
 	return (
@@ -397,7 +555,7 @@ export default function Home() {
 								<motion.h1
 									initial={{ y: 20, opacity: 0 }}
 									animate={{ y: 0, opacity: 1 }}
-									className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/40"
+									className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/40"
 								>
 									Pitch like your life depends on it.
 								</motion.h1>
@@ -421,7 +579,7 @@ export default function Home() {
 						>
 							{/* PDF takes majority / full width */}
 							<div className="relative flex-1 h-full min-h-0 rounded-2xl border border-white/10 bg-[#050505] overflow-hidden shadow-2xl">
-								<PdfViewer file={file} />
+								<PdfViewer file={file} onPageChange={handlePageChange} />
 								{/* Docked mini orb + status (stacked) */}
 								<div className="pointer-events-none absolute bottom-0.5 right-12 flex flex-col items-center gap-2 w-20">
 									<div className="pointer-events-none flex items-center justify-center w-16 h-16 rounded-full bg-black/50 border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm">
