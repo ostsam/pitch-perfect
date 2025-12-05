@@ -1,25 +1,64 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera, CameraOff, Eye, EyeOff, Smile } from "lucide-react";
+import { useFaceDetection, FaceData } from "@/hooks/use-face-detection";
+import { cn } from "@/lib/utils";
 
-export function CameraFeed({ active }: { active: boolean }) {
+interface CameraFeedProps {
+  active: boolean;
+  onFaceData?: (data: FaceData | null) => void;
+}
+
+export function CameraFeed({ active, onFaceData }: CameraFeedProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  
+  // Face detection hook
+  const { faceData, isModelLoaded, error } = useFaceDetection(videoRef, {
+    enabled: active && hasPermission === true,
+    onFaceData: (data) => {
+      console.log("🎭 Face Detection Data:", data);
+      onFaceData?.(data);
+    },
+    detectionInterval: 500, // Detect every 500ms
+  });
 
   useEffect(() => {
     let stream: MediaStream | null = null;
 
     async function setupCamera() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        console.log("🎥 Requesting camera access...");
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "user"
+          }, 
+          audio: false 
+        });
+        
+        console.log("✅ Camera access granted, stream:", stream);
+        
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          setHasPermission(true);
+          console.log("📹 Video element srcObject set");
+          
+          // Wait for video to be ready
+          videoRef.current.onloadedmetadata = () => {
+            console.log("✅ Video metadata loaded");
+            videoRef.current?.play().then(() => {
+              console.log("▶️ Video playing");
+              setHasPermission(true);
+            }).catch(err => {
+              console.error("❌ Error playing video:", err);
+            });
+          };
         }
       } catch (err) {
-        console.error("Error accessing camera:", err);
+        console.error("❌ Error accessing camera:", err);
         setHasPermission(false);
       }
     }
@@ -28,6 +67,7 @@ export function CameraFeed({ active }: { active: boolean }) {
 
     return () => {
       if (stream) {
+        console.log("🛑 Stopping camera stream");
         stream.getTracks().forEach(track => track.stop());
       }
     };
@@ -37,15 +77,18 @@ export function CameraFeed({ active }: { active: boolean }) {
     <div className="relative w-full h-full flex flex-col">
       {/* Camera Container */}
       <div className="relative flex-1 w-full h-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5">
-        {hasPermission ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover transform scale-x-[-1]" // Mirror effect
-          />
-        ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={cn(
+            "w-full h-full object-cover transform scale-x-[-1]",
+            hasPermission === false && "hidden"
+          )}
+        />
+        
+        {hasPermission === false && (
           <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 gap-4 bg-zinc-900/50">
             <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center">
                <CameraOff className="w-6 h-6" />
@@ -53,16 +96,6 @@ export function CameraFeed({ active }: { active: boolean }) {
             <p className="text-sm font-medium">Camera Access Required</p>
           </div>
         )}
-
-        {/* Overlay UI */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 pointer-events-none">
-          <div className="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${active ? "bg-red-500 animate-pulse" : "bg-zinc-500"}`} />
-            <span className="text-[10px] font-mono uppercase tracking-wider text-white/80">
-              {active ? "REC" : "STANDBY"}
-            </span>
-          </div>
-        </div>
       </div>
     </div>
   );
