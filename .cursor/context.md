@@ -23,5 +23,17 @@ Session 2025-12-05: Tightened ElevenLabs service typing—`streamAudio` now retu
 
 Session 2025-12-05: Hardened PDF service typing—replaced `any` event payloads with typed/unknown handling in `lib/services/pdf.ts`.
 
+Session 2025-12-05: Added page-level context flow—PDF processing now returns per-page text; client tracks current page and sends page text + deck summary to analyzePitch; OpenAI prompt prioritizes page text with trimmed summary. Minor Tailwind/unused state cleanups.
+
 Session 2025-12-05: Standardized on Bun—set `packageManager` to `bun@1.2.15` and removed npm/pnpm/yarn lockfiles.
+
+Session 2025-12-05: Code review for commit d4ef026—flagged PDF viewer not resetting pageNumber on new document load and Deepgram session reconnects on each roast due to useEffect/analyzePitch deps; no code changes made.
+
+Session 2025-12-05: Fixed PDF viewer reset/clamp by resetting to page 1 on load and clamping pageNumber in render; prevented Deepgram session churn by moving roast history to a ref so the websocket/media recorder are stable across roasts.
+
+Session 2025-12-05: Added guards to avoid queuing multiple roasts—introduce isAnalyzing/isSpeaking refs to block overlapping pitch analyses and speech playback in `app/page.tsx`.
+
+Session 2025-12-05: Added streaming TTS playback with MediaSource and brief buffer; `/api/speak` already streams MP3, client now consumes stream to reduce roast latency while keeping prompt page context intact.
+
+Session 2025-12-05: Updated OpenAI system prompt to wrap roast text with tone markers `[angry>` prefix and `<screaming]` suffix for aggressive delivery.
 

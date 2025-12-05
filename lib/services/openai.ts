@@ -7,7 +7,9 @@ const openai = new OpenAI({
 export interface PitchEvaluationInput {
 	transcript: string;
 	emotionData: string; // e.g., "Dominant: Fear (80%), Secondary: Sad (10%)"
-	pdfContext: string;
+	pageText?: string;
+	deckSummary?: string;
+	pdfContext?: string; // deprecated fallback
 	previousRoasts?: string[];
 }
 
@@ -17,13 +19,46 @@ export interface PitchEvaluationResult {
 }
 
 export class IntelligenceService {
+	static async summarizeDeck(text: string): Promise<string> {
+		const prompt = `
+      Summarize this pitch deck text into concise bullets (max 200 words).
+      Focus on: problem, solution, market, traction, business model, team, ask.
+      Keep it compact and factual.
+    `;
+
+		try {
+			const completion = await openai.chat.completions.create({
+				model: "gpt-4.1-mini",
+				messages: [
+					{ role: "system", content: prompt },
+					{ role: "user", content: text.slice(0, 12000) },
+				],
+				max_tokens: 400,
+				temperature: 0.4,
+			});
+
+			const summary = completion.choices[0].message.content || "";
+			return summary.trim();
+		} catch (error) {
+			console.error("Error summarizing deck:", error);
+			return text.slice(0, 1200);
+		}
+	}
+
 	/**
 	 * Analyzes the pitch state and decides whether to interrupt.
 	 */
 	static async evaluatePitch(
 		input: PitchEvaluationInput
 	): Promise<PitchEvaluationResult> {
-		const { transcript, emotionData, pdfContext, previousRoasts = [] } = input;
+		const {
+			transcript,
+			emotionData,
+			pageText = "",
+			deckSummary = "",
+			pdfContext = "",
+			previousRoasts = [],
+		} = input;
 
 		if (
 			transcript.length < 10 &&
@@ -51,8 +86,10 @@ export class IntelligenceService {
       INSTRUCTIONS:
       - Analyze the inputs.
       - Decide if an interruption is WARRANTED. Do not interrupt if they are doing "okay".
-      - If warranted, generate a short, biting, direct "roast" (1-2 sentences max).
+      - If warranted, generate a short, biting, direct "roast" (1-2 sentences max) directly in response to the relevant chunk.
       - Be mean but constructive. Like Simon Cowell meets Gordon Ramsay.
+      - Format the roast text itself wrapped with tone markers: prefix with <angry> or <screaming> and suffix with </angry> or </screaming> at appropriate intervals.
+      - Example: "<angry> That was awful </angry> <screaming> You're a complete failure! </screaming>"
       - If not warranted, return shouldInterrupt: false.
 
       Output JSON format:
@@ -63,11 +100,12 @@ export class IntelligenceService {
     `;
 
 		const userPrompt = `
-      PITCH DECK CONTEXT:
-      ${pdfContext.slice(
-				0,
-				10000
-			)} // Truncate to avoid context limit if necessary
+      PITCH DECK CONTEXT (current page first, then brief summary):
+      CURRENT PAGE:
+      ${pageText || "(no page text available)"}
+
+      DECK SUMMARY (short):
+      ${deckSummary || pdfContext || "(no deck summary available)"}
 
       USER EMOTIONS:
       ${emotionData}

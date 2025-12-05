@@ -4,9 +4,9 @@ import { IntelligenceService, PitchEvaluationInput } from '@/lib/services/openai
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { transcript, emotionData, pdfContext, previousRoasts } = body as PitchEvaluationInput;
+    const { transcript, emotionData, pageText, deckSummary, pdfContext, previousRoasts } = body as PitchEvaluationInput;
 
-    if (!pdfContext) {
+    if (!pageText && !deckSummary && !pdfContext) {
       return NextResponse.json(
         { error: 'PDF context is required' },
         { status: 400 }
@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
     const result = await IntelligenceService.evaluatePitch({
       transcript,
       emotionData,
+      pageText,
+      deckSummary,
       pdfContext,
       previousRoasts,
     });

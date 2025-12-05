@@ -5,7 +5,7 @@ const client = new ElevenLabsClient({
 	apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
-const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"; // "George" - often sounds professional/British/stern
+const DEFAULT_VOICE_ID = "2582IphrnSeCHztk7SEW"; // "Alastair Savage" - Scottish accent
 
 export class VoiceService {
 	/**
@@ -15,14 +15,11 @@ export class VoiceService {
 	 */
 	static async streamAudio(text: string): Promise<ReadableStream<Uint8Array>> {
 		try {
-			const audioStream = await client.textToSpeech.convert(
-				DEFAULT_VOICE_ID, 
-				{
-					text,
-					modelId: "eleven_turbo_v2_5", // Low latency model
-					outputFormat: "mp3_44100_128",
-				}
-			);
+			const audioStream = await client.textToSpeech.convert(DEFAULT_VOICE_ID, {
+				text,
+				modelId: "eleven_turbo_v2_5", // Low latency model
+				outputFormat: "mp3_44100_128",
+			});
 
 			return audioStream as ReadableStream<Uint8Array>;
 		} catch (error) {
