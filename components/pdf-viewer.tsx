@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 // Set worker source
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
