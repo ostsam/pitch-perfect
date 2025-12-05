@@ -5,52 +5,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Info, XOctagon } from "lucide-react";
 
-interface RoastMessage {
+export interface RoastMessage {
   id: string;
   text: string;
   severity: "info" | "warning" | "critical";
   timestamp: number;
 }
 
-export function RoastFeed({ isActive }: { isActive: boolean }) {
-  const [messages, setMessages] = useState<RoastMessage[]>([]);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    const roasts = [
-      "That market sizing is purely anecdotal.",
-      "You're mumbling. Project confidence.",
-      "The moat here is non-existent.",
-      "Slide 4 contradicts your opening statement.",
-      "CAC assumptions are incredibly optimistic.",
-      "Is this a hobby or a business?",
-      "Stop reading off the slide.",
-    ];
-
-    const interval = setInterval(() => {
-      if (Math.random() > 0.55) {
-        const text = roasts[Math.floor(Math.random() * roasts.length)];
-        const severity = Math.random() > 0.8 ? "critical" : Math.random() > 0.5 ? "warning" : "info";
-        
-        const newMessage: RoastMessage = {
-          id: Math.random().toString(36).substr(2, 9),
-          text,
-          severity: severity as any,
-          timestamp: Date.now(),
-        };
-
-        setMessages((prev) => [...prev.slice(-4), newMessage]);
-      }
-    }, 3800);
-
-    return () => clearInterval(interval);
-  }, [isActive]);
-
+export function RoastFeed({ roasts }: { roasts: RoastMessage[] }) {
   return (
     <div className="absolute bottom-8 right-8 w-[400px] pointer-events-none z-[100] flex flex-col items-end gap-3">
       <AnimatePresence mode="popLayout">
-        {messages.map((msg) => (
+        {roasts.map((msg) => (
           <motion.div
             key={msg.id}
             layout
