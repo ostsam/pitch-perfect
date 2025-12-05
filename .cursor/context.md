@@ -17,5 +17,11 @@ Session 2025-12-05: Added placeholder `public/sw.js` to prevent repeated 404 req
 
 Session 2025-12-05: Reduced orb footprint to avoid shifting on activate; orb now accepts sizeClass prop, dock uses w-16 h-16 holder with w-12 h-12 orb for stable alignment.
 
+Session 2025-12-05: Removed unused `components/roast-feed.tsx` (toast UI) per request.
+
+Session 2025-12-05: Tightened ElevenLabs service typing—`streamAudio` now returns `ReadableStream<Uint8Array>` instead of `any`.
+
+Session 2025-12-05: Hardened PDF service typing—replaced `any` event payloads with typed/unknown handling in `lib/services/pdf.ts`.
+
 Session 2025-12-05: Standardized on Bun—set `packageManager` to `bun@1.2.15` and removed npm/pnpm/yarn lockfiles.
 

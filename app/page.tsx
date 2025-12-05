@@ -5,11 +5,17 @@ import { FileUpload } from "@/components/file-upload";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { Aperture } from "lucide-react";
-import { RoastMessage } from "@/components/roast-feed";
 import { Orb } from "@/components/orb";
 import { CameraFeed } from "@/components/camera-feed";
 import { cn } from "@/lib/utils";
 import type { FaceData } from "@/hooks/use-face-detection";
+
+export interface RoastMessage {
+	id: string;
+	text: string;
+	severity: "info" | "warning" | "critical";
+	timestamp: number;
+}
 
 const PdfViewer = dynamic(
 	() => import("@/components/pdf-viewer").then((mod) => mod.PdfViewer),
