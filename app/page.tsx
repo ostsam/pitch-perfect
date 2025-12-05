@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { FileUpload } from "@/components/file-upload";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Play, ArrowLeft, Aperture, Activity, Camera } from "lucide-react";
-import { RoastFeed } from "@/components/roast-feed";
+import { Aperture } from "lucide-react";
+import { RoastFeed, RoastMessage } from "@/components/roast-feed";
 import { Orb } from "@/components/orb";
 import { CameraFeed } from "@/components/camera-feed";
 import { cn } from "@/lib/utils";
@@ -20,29 +20,225 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [isRoasting, setIsRoasting] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [currentFaceData, setCurrentFaceData] = useState<FaceData | null>(null);
+  const [roasts, setRoasts] = useState<RoastMessage[]>([]);
+  
+  // State for the "Brain"
+  const [pdfText, setPdfText] = useState<string>("");
+  const [currentFaceData, setCurrentFaceData] = useState<FaceData | null>(null); // For UI rendering
+  const pdfTextRef = useRef<string>(""); // Ref for the interval to access fresh data
+  const transcriptRef = useRef<string>(""); 
+  const faceDataRef = useRef<FaceData | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Connection refs
+  const socketRef = useRef<WebSocket | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const analysisIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    audioRef.current = new Audio();
   }, []);
 
-  // Handle face data updates - this will be sent to AI later
-  const handleFaceData = (data: FaceData | null) => {
-    setCurrentFaceData(data);
-    
-    // TODO: Send to AI backend
-    // For now, log detailed face analysis to console
-    if (data) {
-      console.log("📊 Face Analysis Update:", {
-        timestamp: new Date(data.detectionTime).toLocaleTimeString(),
-        dominantEmotion: data.dominantEmotion,
-        confidence: (data.confidence * 100).toFixed(1) + "%",
-        allEmotions: Object.entries(data.emotions).map(([emotion, value]) => ({
-          emotion,
-          value: (value * 100).toFixed(1) + "%"
-        })).sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
-      });
+  // 1. Handle PDF Upload & Text Extraction
+  useEffect(() => {
+    if (!file) {
+      setPdfText("");
+      pdfTextRef.current = "";
+      return;
     }
+
+    const extractPdfText = async () => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        const res = await fetch('/api/process-pdf', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.text) {
+          setPdfText(data.text);
+          pdfTextRef.current = data.text; // Update ref
+          console.log("📄 PDF Context Loaded:", data.text.slice(0, 100) + "...");
+        }
+      } catch (error) {
+        console.error("Failed to extract PDF text:", error);
+      }
+    };
+
+    extractPdfText();
+  }, [file]);
+
+  // 2. Deepgram & Microphone Setup
+  useEffect(() => {
+    if (!isRoasting || !file) {
+      // Cleanup
+      socketRef.current?.close();
+      mediaRecorderRef.current?.stop();
+      if (analysisIntervalRef.current) clearInterval(analysisIntervalRef.current);
+      return;
+    }
+
+    const startSession = async () => {
+      try {
+        // A. Get Token
+        const tokenRes = await fetch('/api/get-deepgram-token');
+        const { key } = await tokenRes.json();
+
+        if (!key) throw new Error("No Deepgram key");
+
+        // B. Setup WebSocket
+        const socket = new WebSocket('wss://api.deepgram.com/v1/listen?smart_format=true&model=nova-2&language=en-US', [
+          'token',
+          key,
+        ]);
+
+        socket.onopen = () => {
+          console.log("🟢 Connected to Deepgram");
+          
+          // C. Start Microphone
+          navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            
+            mediaRecorder.addEventListener('dataavailable', (event) => {
+              if (event.data.size > 0 && socket.readyState === 1) {
+                socket.send(event.data);
+              }
+            });
+            
+            mediaRecorder.start(250); // Send chunks every 250ms
+          });
+        };
+
+        socket.onmessage = (message) => {
+          const received = JSON.parse(message.data);
+          const transcript = received.channel?.alternatives[0]?.transcript;
+          if (transcript && received.is_final) {
+            transcriptRef.current += " " + transcript;
+            // Keep transcript buffer manageable (last 1000 chars)
+            if (transcriptRef.current.length > 2000) {
+                transcriptRef.current = transcriptRef.current.slice(-2000);
+            }
+          }
+        };
+
+        socketRef.current = socket;
+
+        // D. Start Analysis Loop (The "Brain")
+        analysisIntervalRef.current = setInterval(analyzePitch, 4000); // Check every 4 seconds
+
+      } catch (error) {
+        console.error("Failed to start session:", error);
+        setIsRoasting(false);
+      }
+    };
+
+    startSession();
+
+    return () => {
+      socketRef.current?.close();
+      mediaRecorderRef.current?.stop();
+      if (analysisIntervalRef.current) clearInterval(analysisIntervalRef.current);
+    };
+  }, [isRoasting, file]);
+
+  // 3. Analysis Logic
+  const analyzePitch = async () => {
+    // Don't interrupt if already speaking
+    if (audioRef.current && !audioRef.current.paused) return;
+
+    const transcript = transcriptRef.current.slice(-500); // Last ~500 chars
+    const faceData = faceDataRef.current;
+    const currentPdfText = pdfTextRef.current; // Use ref here
+
+    // If no PDF text yet, we can't really judge context, but we can judge emotion.
+    // However, the API requires pdfContext.
+    if (!currentPdfText) {
+        console.log("Waiting for PDF text...");
+        return;
+    }
+    
+    if (!transcript.trim() && !faceData) return; // Nothing to analyze
+
+    // Format emotion string
+    let emotionData = "No face detected";
+    if (faceData) {
+      emotionData = `Dominant: ${faceData.dominantEmotion} (${(faceData.confidence * 100).toFixed(0)}%)`;
+      // Add top 2 secondary emotions
+      const secondary = Object.entries(faceData.emotions)
+        .sort(([,a], [,b]) => b - a)
+        .slice(1, 3)
+        .map(([e, v]) => `${e} (${(v*100).toFixed(0)}%)`)
+        .join(", ");
+      if (secondary) emotionData += ` | Secondary: ${secondary}`;
+    }
+
+    try {
+        const res = await fetch('/api/analyze-pitch', {
+            method: 'POST',
+            body: JSON.stringify({
+                transcript,
+                emotionData,
+                pdfContext: currentPdfText,
+                previousRoasts: roasts.map(r => r.text)
+            })
+        });
+        
+        const result = await res.json();
+        
+        if (result.shouldInterrupt && result.roastMessage) {
+            triggerRoast(result.roastMessage);
+        }
+        
+    } catch (error) {
+        console.error("Brain glitch:", error);
+    }
+  };
+
+  // 4. Interrupt/Speak Logic
+  const triggerRoast = async (text: string) => {
+    console.log("🔥 ROAST TRIGGERED:", text);
+    
+    // Add to UI
+    const newRoast: RoastMessage = {
+        id: Date.now().toString(),
+        text,
+        severity: "critical",
+        timestamp: Date.now()
+    };
+    setRoasts(prev => [...prev, newRoast]);
+
+    // Play Audio
+    try {
+        // We fetch the stream then play it. 
+        // Since audio elements need a source, we can fetch as blob.
+        const res = await fetch('/api/speak', {
+            method: 'POST',
+            body: JSON.stringify({ text })
+        });
+        
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        
+        if (audioRef.current) {
+            audioRef.current.src = url;
+            audioRef.current.play();
+        }
+        
+        // Clear transcript buffer so we don't re-analyze old mistakes
+        transcriptRef.current = "";
+        
+    } catch (error) {
+        console.error("Failed to speak:", error);
+    }
+  };
+
+  const handleFaceData = (data: FaceData | null) => {
+    faceDataRef.current = data;
+    setCurrentFaceData(data);
   };
 
   if (!mounted) return null;
@@ -99,7 +295,6 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               className="flex-1 flex flex-col items-center justify-center p-6 relative"
             >
-              {/* Hero Text */}
               <div className="text-center space-y-6 max-w-4xl mb-12 relative z-20">
                  <motion.h1 
                    initial={{ y: 20, opacity: 0 }}
@@ -110,7 +305,6 @@ export default function Home() {
                  </motion.h1>
               </div>
 
-              {/* Upload Zone */}
               <motion.div
                 initial={{ y: 40, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -127,12 +321,12 @@ export default function Home() {
               animate={{ opacity: 1 }}
               className="flex-1 grid grid-cols-12 gap-6 p-6 min-h-0"
             >
-              {/* LEFT: PDF Viewer (6 cols - 50%) */}
+              {/* LEFT: PDF Viewer */}
               <div className="col-span-6 h-full rounded-2xl border border-white/10 bg-[#050505] overflow-hidden shadow-2xl relative flex flex-col">
                 <PdfViewer file={file} />
               </div>
 
-              {/* CENTER: Orb (3 cols - 25%) */}
+              {/* CENTER: Orb */}
               <div className="col-span-3 h-full flex flex-col items-center justify-center relative">
                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/5 to-transparent pointer-events-none" />
                  <Orb active={isRoasting} />
@@ -140,18 +334,18 @@ export default function Home() {
                     <p className="text-[10px] font-mono uppercase tracking-widest">AI Status</p>
                     <div className="flex items-center justify-center gap-2">
                       <div className={cn("w-1.5 h-1.5 rounded-full", isRoasting ? "bg-blue-500 animate-pulse" : "bg-zinc-700")} />
-                      <span className="text-xs font-medium text-zinc-400">{isRoasting ? "Listening..." : "Idle"}</span>
+                      <span className="text-xs font-medium text-zinc-400">{isRoasting ? "Listening & Watching..." : "Idle"}</span>
                     </div>
                  </div>
               </div>
 
-              {/* RIGHT: Camera (3 cols - 25%) */}
+              {/* RIGHT: Camera */}
               <div className="col-span-3 h-full flex flex-col gap-4">
                  <div className="flex-1 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl relative">
                     <CameraFeed active={true} onFaceData={handleFaceData} />
                  </div>
                  
-                 {/* Roast Feed below camera */}
+                 {/* Face Analysis Debug */}
                  <div className="h-1/3 relative rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden">
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 pointer-events-none z-10" />
                    <div className="h-full flex flex-col p-4">
@@ -159,7 +353,6 @@ export default function Home() {
                        Face Analysis Debug
                      </h3>
                      
-                     {/* Show face data always */}
                      {currentFaceData ? (
                        <div className="flex-1 overflow-auto space-y-2 text-xs font-mono">
                          <div className="flex justify-between items-center">
@@ -200,6 +393,9 @@ export default function Home() {
                    </div>
                  </div>
               </div>
+
+              {/* Roast Overlay - removed display but audio still plays */}
+              {/* <RoastFeed roasts={roasts} /> */}
 
             </motion.div>
           )}
