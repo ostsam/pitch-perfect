@@ -17,3 +17,5 @@ Session 2025-12-05: Added placeholder `public/sw.js` to prevent repeated 404 req
 
 Session 2025-12-05: Reduced orb footprint to avoid shifting on activate; orb now accepts sizeClass prop, dock uses w-16 h-16 holder with w-12 h-12 orb for stable alignment.
 
+Session 2025-12-05: Standardized on Bun—set `packageManager` to `bun@1.2.15` and removed npm/pnpm/yarn lockfiles.
+
