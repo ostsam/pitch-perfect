@@ -22,6 +22,7 @@ export function PdfViewer({ file }: PdfViewerProps) {
   const [scale, setScale] = useState<number>(1.0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageHeight, setPageHeight] = useState<number | undefined>(undefined);
+  const [pageWidth, setPageWidth] = useState<number | undefined>(undefined);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
@@ -35,6 +36,7 @@ export function PdfViewer({ file }: PdfViewerProps) {
         if (entry.contentRect) {
           // Use content rect height. Subtract small buffer for borders/shadows (e.g. 20px)
           setPageHeight(entry.contentRect.height - 20); 
+          setPageWidth(entry.contentRect.width - 24); // small padding allowance
         }
       }
     });
@@ -101,7 +103,7 @@ export function PdfViewer({ file }: PdfViewerProps) {
         ref={containerRef} 
         className="flex-1 w-full h-full overflow-auto flex items-center justify-center p-4 custom-scrollbar"
       >
-        {pageHeight && (
+        {pageHeight && pageWidth && (
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
@@ -114,7 +116,8 @@ export function PdfViewer({ file }: PdfViewerProps) {
           >
             <Page 
               pageNumber={pageNumber} 
-              height={pageHeight * scale} 
+              width={pageWidth}
+              scale={scale}
               renderTextLayer={false}
               renderAnnotationLayer={false}
               className="bg-white shadow-2xl border border-white/5 rounded-sm overflow-hidden" 

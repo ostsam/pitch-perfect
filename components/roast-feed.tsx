@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Info, XOctagon } from "lucide-react";
@@ -14,7 +13,7 @@ export interface RoastMessage {
 
 export function RoastFeed({ roasts }: { roasts: RoastMessage[] }) {
   return (
-    <div className="absolute bottom-8 right-8 w-[400px] pointer-events-none z-[100] flex flex-col items-end gap-3">
+    <div className="absolute bottom-8 right-8 w-[400px] pointer-events-none z-100 flex flex-col items-end gap-3">
       <AnimatePresence mode="popLayout">
         {roasts.map((msg) => (
           <motion.div
@@ -62,7 +61,7 @@ export function RoastFeed({ roasts }: { roasts: RoastMessage[] }) {
                 </span>
               </div>
               <p className="text-sm font-medium leading-relaxed font-sans text-white/90">
-                "{msg.text}"
+                &quot;{msg.text}&quot;
               </p>
             </div>
           </motion.div>
