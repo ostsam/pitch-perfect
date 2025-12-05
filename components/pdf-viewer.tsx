@@ -6,17 +6,15 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Set worker source
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+// Set worker source to match react-pdf version
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PdfViewerProps {
   file: File;
+  onSlideChange?: (slideNumber: number) => void;
 }
 
-export function PdfViewer({ file }: PdfViewerProps) {
+export function PdfViewer({ file, onSlideChange }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
@@ -26,6 +24,15 @@ export function PdfViewer({ file }: PdfViewerProps) {
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
   }
+
+  // Call onSlideChange when page number changes
+  const prevPageNumberRef = useRef<number>(pageNumber);
+  useEffect(() => {
+    if (prevPageNumberRef.current !== pageNumber) {
+      prevPageNumberRef.current = pageNumber;
+      onSlideChange?.(pageNumber);
+    }
+  }, [pageNumber, onSlideChange]);
 
   useEffect(() => {
     if (!containerRef.current) return;

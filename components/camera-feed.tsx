@@ -15,16 +15,6 @@ export function CameraFeed({ active, onFaceData }: CameraFeedProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   
-  // Face detection hook
-  const { faceData, isModelLoaded, error } = useFaceDetection(videoRef, {
-    enabled: active && hasPermission === true,
-    onFaceData: (data) => {
-      console.log("🎭 Face Detection Data:", data);
-      onFaceData?.(data);
-    },
-    detectionInterval: 500, // Detect every 500ms
-  });
-
   useEffect(() => {
     let stream: MediaStream | null = null;
 

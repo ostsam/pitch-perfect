@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FileUpload } from "@/components/file-upload";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Play, ArrowLeft, Aperture, Activity, Camera } from "lucide-react";
+import { Mic, Play, ArrowLeft, Aperture, Activity, Camera, Square, Settings } from "lucide-react";
 import { RoastFeed } from "@/components/roast-feed";
 import { Orb } from "@/components/orb";
 import { CameraFeed } from "@/components/camera-feed";
+import { ConfigModal } from "@/components/config-modal";
 import { cn } from "@/lib/utils";
 import type { FaceData } from "@/hooks/use-face-detection";
+import { usePitchSession } from "@/hooks/use-pitch-session";
+import { useMicrophone } from "@/hooks/use-microphone";
 
 const PdfViewer = dynamic(() => import("@/components/pdf-viewer").then((mod) => mod.PdfViewer), {
   ssr: false,
@@ -21,17 +24,62 @@ export default function Home() {
   const [isRoasting, setIsRoasting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [currentFaceData, setCurrentFaceData] = useState<FaceData | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [showConfig, setShowConfig] = useState(false);
+
+  // Get OpenAI API key from environment or localStorage
+  const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Try to get from localStorage first
+      const storedOpenaiKey = localStorage.getItem('openaiApiKey');
+      if (storedOpenaiKey) {
+        setOpenaiApiKey(storedOpenaiKey);
+      }
+      // Or get from environment variable
+      const envOpenaiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+      if (envOpenaiKey) {
+        setOpenaiApiKey(envOpenaiKey);
+      }
+    }
+  }, []);
+
+  // Initialize pitch session
+  const {
+    startSession,
+    stopSession,
+    processInput,
+    setCurrentSlide: updateSlide,
+    isActive,
+    isConnecting,
+    error: sessionError,
+  } = usePitchSession(
+    openaiApiKey ? { openaiApiKey } : undefined
+  );
+
+  // Initialize microphone
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    transcript,
+    error: micError,
+  } = useMicrophone({
+    onTranscript: (text) => {
+      // Process transcript with face data
+      processInput(text, currentFaceData, currentSlide);
+    },
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Handle face data updates - this will be sent to AI later
+  // Handle face data updates
   const handleFaceData = (data: FaceData | null) => {
     setCurrentFaceData(data);
     
-    // TODO: Send to AI backend
-    // For now, log detailed face analysis to console
     if (data) {
       console.log("📊 Face Analysis Update:", {
         timestamp: new Date(data.detectionTime).toLocaleTimeString(),
@@ -43,6 +91,34 @@ export default function Home() {
         })).sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
       });
     }
+  };
+
+  // Handle slide changes
+  const handleSlideChange = useCallback((slideNumber: number) => {
+    setCurrentSlide(slideNumber);
+    updateSlide(slideNumber);
+  }, [updateSlide]);
+
+  // Start practice session
+  const handleStartPractice = async () => {
+    console.log('🚀 Starting practice session...');
+    setIsRoasting(true);
+    
+    // Start session first (sets isActive to true)
+    await startSession();
+    console.log('✅ Session started, now starting microphone...');
+    
+    // Then start recording (needs session to be active)
+    await startRecording();
+    console.log('✅ Microphone started');
+  };
+
+  // Stop practice session
+  const handleStopPractice = () => {
+    console.log('🛑 Stopping practice session...');
+    setIsRoasting(false);
+    stopRecording();
+    stopSession();
   };
 
   if (!mounted) return null;
@@ -70,22 +146,58 @@ export default function Home() {
           </span>
         </div>
 
-        {file && (
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowConfig(true)}
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors text-zinc-400 hover:text-white"
+            title="Configuration"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          {file && (
            <div className="flex items-center gap-4">
              <button 
-               onClick={() => setIsRoasting(!isRoasting)}
+               onClick={() => isRoasting ? handleStopPractice() : handleStartPractice()}
+               disabled={isConnecting}
                className={cn(
                  "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2",
                  isRoasting 
                   ? "bg-red-600 text-white hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]" 
-                  : "bg-white text-black hover:bg-zinc-200"
+                  : "bg-white text-black hover:bg-zinc-200",
+                 isConnecting && "opacity-50 cursor-not-allowed"
                )}
              >
-               {isRoasting ? "Live Session" : "Start Session"}
+               {isConnecting ? (
+                 <>
+                   <Activity className="w-4 h-4 animate-spin" />
+                   Connecting...
+                 </>
+               ) : isRoasting ? (
+                 <>
+                   <Square className="w-4 h-4" />
+                   Stop Session
+                 </>
+               ) : (
+                 <>
+                   <Play className="w-4 h-4" />
+                   Start Session
+                 </>
+               )}
              </button>
+             
+             {(sessionError || micError) && (
+               <span className="text-xs text-red-400">
+                 {sessionError || micError}
+               </span>
+             )}
            </div>
-        )}
+          )}
+        </div>
       </motion.header>
+
+      {/* Config Modal */}
+      <ConfigModal isOpen={showConfig} onClose={() => setShowConfig(false)} />
 
       {/* Content Stage */}
       <div className="flex-1 relative z-10 flex flex-col min-h-0">
@@ -129,7 +241,7 @@ export default function Home() {
             >
               {/* LEFT: PDF Viewer (6 cols - 50%) */}
               <div className="col-span-6 h-full rounded-2xl border border-white/10 bg-[#050505] overflow-hidden shadow-2xl relative flex flex-col">
-                <PdfViewer file={file} />
+                <PdfViewer file={file} onSlideChange={handleSlideChange} />
               </div>
 
               {/* CENTER: Orb (3 cols - 25%) */}
@@ -138,9 +250,15 @@ export default function Home() {
                  <Orb active={isRoasting} />
                  <div className="absolute bottom-10 text-center space-y-2 opacity-50">
                     <p className="text-[10px] font-mono uppercase tracking-widest">AI Status</p>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className={cn("w-1.5 h-1.5 rounded-full", isRoasting ? "bg-blue-500 animate-pulse" : "bg-zinc-700")} />
-                      <span className="text-xs font-medium text-zinc-400">{isRoasting ? "Listening..." : "Idle"}</span>
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-1.5 h-1.5 rounded-full", isActive ? "bg-blue-500 animate-pulse" : "bg-zinc-700")} />
+                        <span className="text-xs font-medium text-zinc-400">{isActive ? "Active" : "Idle"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mic className={cn("w-3 h-3", isRecording ? "text-red-500" : "text-zinc-700")} />
+                        <span className="text-xs font-medium text-zinc-400">{isRecording ? "Recording" : "Muted"}</span>
+                      </div>
                     </div>
                  </div>
               </div>
