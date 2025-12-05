@@ -9,6 +9,7 @@ import { RoastFeed } from "@/components/roast-feed";
 import { Orb } from "@/components/orb";
 import { CameraFeed } from "@/components/camera-feed";
 import { cn } from "@/lib/utils";
+import type { FaceData } from "@/hooks/use-face-detection";
 
 const PdfViewer = dynamic(() => import("@/components/pdf-viewer").then((mod) => mod.PdfViewer), {
   ssr: false,
@@ -19,10 +20,30 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [isRoasting, setIsRoasting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [currentFaceData, setCurrentFaceData] = useState<FaceData | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Handle face data updates - this will be sent to AI later
+  const handleFaceData = (data: FaceData | null) => {
+    setCurrentFaceData(data);
+    
+    // TODO: Send to AI backend
+    // For now, log detailed face analysis to console
+    if (data) {
+      console.log("📊 Face Analysis Update:", {
+        timestamp: new Date(data.detectionTime).toLocaleTimeString(),
+        dominantEmotion: data.dominantEmotion,
+        confidence: (data.confidence * 100).toFixed(1) + "%",
+        allEmotions: Object.entries(data.emotions).map(([emotion, value]) => ({
+          emotion,
+          value: (value * 100).toFixed(1) + "%"
+        })).sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
+      });
+    }
+  };
 
   if (!mounted) return null;
 
@@ -127,19 +148,62 @@ export default function Home() {
               {/* RIGHT: Camera (3 cols - 25%) */}
               <div className="col-span-3 h-full flex flex-col gap-4">
                  <div className="flex-1 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl relative">
-                    <CameraFeed active={isRoasting} />
+                    <CameraFeed active={true} onFaceData={handleFaceData} />
                  </div>
                  
                  {/* Roast Feed below camera */}
-                 <div className="h-1/3 relative rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden p-4">
+                 <div className="h-1/3 relative rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden">
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 pointer-events-none z-10" />
-                   <h3 className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-4 border-b border-white/5 pb-2">Live Critique</h3>
-                   <RoastFeed isActive={isRoasting} />
+                   <div className="h-full flex flex-col p-4">
+                     <h3 className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-3 border-b border-white/5 pb-2 flex-none">
+                       Face Analysis Debug
+                     </h3>
+                     
+                     {/* Show face data always */}
+                     {currentFaceData ? (
+                       <div className="flex-1 overflow-auto space-y-2 text-xs font-mono">
+                         <div className="flex justify-between items-center">
+                           <span className="text-zinc-400">Emotion:</span>
+                           <span className="text-white font-bold capitalize">{currentFaceData.dominantEmotion}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                           <span className="text-zinc-400">Confidence:</span>
+                           <span className="text-green-400">{(currentFaceData.confidence * 100).toFixed(0)}%</span>
+                         </div>
+                         <div className="mt-3 pt-3 border-t border-white/5">
+                           <div className="text-zinc-500 mb-2 text-[10px]">All Emotions:</div>
+                           {Object.entries(currentFaceData.emotions)
+                             .sort(([, a], [, b]) => b - a)
+                             .slice(0, 4)
+                             .map(([emotion, value]) => (
+                               <div key={emotion} className="flex justify-between items-center mb-1">
+                                 <span className="text-zinc-500 capitalize text-[11px]">{emotion}:</span>
+                                 <div className="flex items-center gap-2">
+                                   <div className="w-12 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                                     <div 
+                                       className="h-full bg-blue-500 rounded-full transition-all"
+                                       style={{ width: `${value * 100}%` }}
+                                     />
+                                   </div>
+                                   <span className="text-zinc-400 text-[10px] w-8 text-right">{(value * 100).toFixed(0)}%</span>
+                                 </div>
+                               </div>
+                             ))
+                           }
+                         </div>
+                       </div>
+                     ) : (
+                       <div className="flex-1 flex items-center justify-center text-zinc-600 text-xs">
+                         No face detected
+                       </div>
+                     )}
+                   </div>
                  </div>
               </div>
 
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </main>
