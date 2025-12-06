@@ -18,7 +18,7 @@ export class VoiceService {
 			const audioStream = await client.textToSpeech.convert(DEFAULT_VOICE_ID, {
 				text,
 				modelId: "eleven_turbo_v2_5", // Low latency model
-				outputFormat: "mp3_44100_128",
+				outputFormat: "mp3_44100_192",
 			});
 
 			return audioStream as ReadableStream<Uint8Array>;
