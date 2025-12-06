@@ -51,3 +51,5 @@ Session 2025-12-05: Simplified realtime pipeline—removed analysis interval; de
 
 Session 2025-12-05: Utterance buffering—collect partial/final transcripts with a 1.3s utterance timer; analyze after debounce or when buffer grows, enabling mid-sentence interrupts; cleans partial cache/buffer on roast.
 
+Session 2025-12-05: UI tweak—camera panel now opens by default on medium and larger screens via matchMedia check.
+
