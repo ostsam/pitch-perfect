@@ -9,20 +9,26 @@
 ## 🧪 How to Test
 
 ### Step 1: Open the App
+
 Visit: **http://localhost:3000**
 
 ### Step 2: Upload Any PDF
+
 - Drag and drop a PDF file
 - Or click to browse
 
 ### Step 3: See the Camera Feed
+
 You should immediately see:
+
 - **Camera feed** (mirrored) in the right column
 - **Permission prompt** (click "Allow" if asked)
 - **Live video** of yourself
 
 ### Step 4: Watch the Face Data Panel
+
 **Below the camera**, you'll see a debug panel showing:
+
 - ✨ **Dominant Emotion** (e.g., "neutral", "happy")
 - 📊 **Confidence %** (how sure the model is)
 - 👁️ **Eye Contact** (good/poor/none) with color coding
@@ -31,6 +37,7 @@ You should immediately see:
 This updates every **500ms** in real-time!
 
 ### Step 5: Check Browser Console
+
 Open Developer Tools (F12 or Cmd+Option+I) and look for:
 
 ```javascript
@@ -64,6 +71,7 @@ Open Developer Tools (F12 or Cmd+Option+I) and look for:
 ### Step 6: Test Different Expressions
 
 Try making different faces:
+
 - 😊 **Smile** → Should show "happy" with high confidence
 - 😮 **Surprised face** → Should show "surprised"
 - 😠 **Angry face** → Should show "angry"
@@ -76,6 +84,7 @@ Watch both the **UI panel** and **browser console** update in real-time!
 ## 📊 What You'll See
 
 ### In the UI (Right Panel):
+
 ```
 ┌─────────────────────────┐
 │   [Your Camera Feed]    │
@@ -97,6 +106,7 @@ Watch both the **UI panel** and **browser console** update in real-time!
 ```
 
 ### In Console (F12):
+
 ```
 🎭 Face Detection Data: { ... full raw data ... }
 📊 Face Analysis Update: { ... formatted analysis ... }
@@ -111,17 +121,18 @@ Watch both the **UI panel** and **browser console** update in real-time!
 
 ## 🐛 Troubleshooting
 
-| Issue | What to Check |
-|-------|---------------|
-| No camera | Check browser permissions |
-| No face data | Ensure face is clearly visible, good lighting |
-| "Loading face detection..." | Models are loading (wait 2-3 seconds) |
-| Console logs not appearing | Open F12, check Console tab |
-| No data in UI panel | Says "No face detected" - move closer to camera |
+| Issue                       | What to Check                                   |
+| --------------------------- | ----------------------------------------------- |
+| No camera                   | Check browser permissions                       |
+| No face data                | Ensure face is clearly visible, good lighting   |
+| "Loading face detection..." | Models are loading (wait 2-3 seconds)           |
+| Console logs not appearing  | Open F12, check Console tab                     |
+| No data in UI panel         | Says "No face detected" - move closer to camera |
 
 ## 🎬 What Happens During "Start Session"?
 
 When you click **"Start Session"**:
+
 - Camera feed gets **"REC"** indicator
 - Face detection overlays appear **on the camera**
 - UI panel switches from "Debug" to **"Live Critique"** (roast feed)
@@ -130,6 +141,7 @@ When you click **"Start Session"**:
 ## 🔥 Next Steps
 
 The face data is now flowing! Your friend can:
+
 1. Hook into `handleFaceData()` in `app/page.tsx`
 2. Send the data to the AI backend via WebSocket or API
 3. AI can use emotion + eye contact + transcript to generate roasts
