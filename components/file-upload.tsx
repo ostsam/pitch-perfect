@@ -43,7 +43,7 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
         }, 1500); // Longer, more dramatic pause
       }
     },
-    [onFileSelect]
+    [onFileSelect],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -68,11 +68,13 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
         className={cn(
           "relative h-80 w-full rounded-2xl border border-white/10 bg-black overflow-hidden cursor-pointer",
           "group transition-all duration-500 ease-out",
-          isDragActive ? "scale-[1.02] border-blue-500/50" : "hover:border-white/20"
+          isDragActive
+            ? "scale-[1.02] border-blue-500/50"
+            : "hover:border-white/20",
         )}
       >
         <input {...getInputProps()} />
-        
+
         {/* Spotlight Effect */}
         <div
           className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100"
@@ -82,32 +84,33 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
         />
 
         {/* Grid Pattern Background */}
-        <div className="absolute inset-0 z-0 opacity-[0.15]"
-             style={{
-               backgroundImage: `linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)`,
-               backgroundSize: '40px 40px'
-             }}
+        <div
+          className="absolute inset-0 z-0 opacity-[0.15]"
+          style={{
+            backgroundImage: `linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)`,
+            backgroundSize: "40px 40px",
+          }}
         />
 
         {/* Content */}
         <div className="relative z-10 h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
           <AnimatePresence mode="wait">
             {isProcessing ? (
-               <motion.div
-                 key="processing"
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-                 exit={{ opacity: 0 }}
-                 className="flex flex-col items-center space-y-4"
-               >
-                 <div className="relative">
-                   <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse" />
-                   <Loader2 className="w-10 h-10 text-white animate-spin relative z-10" />
-                 </div>
-                 <p className="text-sm font-mono text-blue-200/70 tracking-widest uppercase">
-                   Analyzing Deck Structure...
-                 </p>
-               </motion.div>
+              <motion.div
+                key="processing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center space-y-4"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse" />
+                  <Loader2 className="w-10 h-10 text-white animate-spin relative z-10" />
+                </div>
+                <p className="text-sm font-mono text-blue-200/70 tracking-widest uppercase">
+                  Analyzing Deck Structure...
+                </p>
+              </motion.div>
             ) : (
               <motion.div
                 key="idle"
@@ -116,29 +119,33 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center space-y-6"
               >
-                 <div className={cn(
-                   "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500",
-                   isDragActive 
-                    ? "bg-blue-500/20 text-blue-400 shadow-[0_0_40px_-10px_rgba(59,130,246,0.5)]" 
-                    : "bg-white/5 text-zinc-400 group-hover:bg-white/10 group-hover:text-white shadow-2xl"
-                 )}>
-                   {isDragActive ? (
-                     <Sparkles className="w-8 h-8 animate-pulse" />
-                   ) : (
-                     <Upload className="w-8 h-8" />
-                   )}
-                 </div>
+                <div
+                  className={cn(
+                    "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500",
+                    isDragActive
+                      ? "bg-blue-500/20 text-blue-400 shadow-[0_0_40px_-10px_rgba(59,130,246,0.5)]"
+                      : "bg-white/5 text-zinc-400 group-hover:bg-white/10 group-hover:text-white shadow-2xl",
+                  )}
+                >
+                  {isDragActive ? (
+                    <Sparkles className="w-8 h-8 animate-pulse" />
+                  ) : (
+                    <Upload className="w-8 h-8" />
+                  )}
+                </div>
 
-                 <div className="space-y-2 max-w-sm">
-                   <h3 className="text-xl font-medium text-white tracking-tight">
-                     {isDragActive ? "Drop to Initialize" : "Upload Pitch Deck"}
-                   </h3>
-                   <p className="text-sm text-zinc-500 leading-relaxed">
-                     Drag and drop your PDF here, or click to browse.
-                     <br />
-                     <span className="text-xs opacity-50">We accept standard PDF formats up to 50MB.</span>
-                   </p>
-                 </div>
+                <div className="space-y-2 max-w-sm">
+                  <h3 className="text-xl font-medium text-white tracking-tight">
+                    {isDragActive ? "Drop to Initialize" : "Upload Pitch Deck"}
+                  </h3>
+                  <p className="text-sm text-zinc-500 leading-relaxed">
+                    Drag and drop your PDF here, or click to browse.
+                    <br />
+                    <span className="text-xs opacity-50">
+                      We accept standard PDF formats up to 50MB.
+                    </span>
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

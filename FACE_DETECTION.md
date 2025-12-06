@@ -7,7 +7,9 @@ Facial expression recognition and eye contact tracking have been integrated to p
 ## 🧠 What's Implemented
 
 ### 1. **Emotion Detection**
+
 Detects 7 emotions in real-time:
+
 - Neutral
 - Happy
 - Sad
@@ -17,12 +19,15 @@ Detects 7 emotions in real-time:
 - Surprised
 
 ### 2. **Eye Contact Tracking**
+
 Calculates gaze direction using 68 facial landmarks:
+
 - **Good**: Presenter maintains direct eye contact
 - **Poor**: Presenter is looking slightly away
 - **None**: No face detected
 
 ### 3. **Visual Feedback**
+
 - Real-time emotion overlay on camera feed
 - Eye contact quality indicator with color coding:
   - 🟢 Green: Good eye contact
@@ -71,10 +76,10 @@ interface FaceData {
     disgusted: number;
     surprised: number;
   };
-  dominantEmotion: string;      // Highest confidence emotion
+  dominantEmotion: string; // Highest confidence emotion
   eyeContact: "good" | "poor" | "none";
-  confidence: number;            // 0-1, confidence of dominant emotion
-  detectionTime: number;         // Timestamp
+  confidence: number; // 0-1, confidence of dominant emotion
+  detectionTime: number; // Timestamp
 }
 ```
 
@@ -87,7 +92,7 @@ Face data is collected and logged in `app/page.tsx`:
 ```typescript
 const handleFaceData = (data: FaceData | null) => {
   setCurrentFaceData(data);
-  
+
   // TODO: Send to AI backend
   if (data && isRoasting) {
     console.log("Face Analysis:", {
@@ -121,25 +126,30 @@ When you connect to the AI model, send this data structure:
 The AI can use this for contextual roasting:
 
 **Scenario 1: Poor Eye Contact + Nervous**
+
 > "Stop staring at your shoes! You're pitching to investors, not your feet. Make eye contact!"
 
 **Scenario 2: Angry Emotion During Q&A**
+
 > "Getting defensive? That's a red flag. VCs will eat you alive if you can't handle criticism."
 
 **Scenario 3: Overly Happy on Serious Slide**
+
 > "Why are you smiling during the risk analysis? This isn't a comedy show."
 
 ## 🎨 Visual Indicators
 
 ### Emotion Display (Top-left of camera)
+
 - Shows dominant emotion
 - Confidence percentage
 - Updates every 500ms
 
 ### Eye Contact Display (Below emotion)
+
 - Color-coded background:
   - Green: Good eye contact
-  - Yellow: Poor eye contact  
+  - Yellow: Poor eye contact
   - Red: No eye contact
 - Icon changes based on status
 
@@ -169,20 +179,25 @@ Parent Component (page.tsx)
 ## 🐛 Troubleshooting
 
 ### Models not loading?
+
 ```bash
 npm run download-models
 ```
 
 ### Camera permission denied?
+
 Check browser settings and ensure HTTPS (or localhost)
 
 ### High CPU usage?
+
 Increase `detectionInterval` in `camera-feed.tsx`:
+
 ```typescript
 detectionInterval: 1000, // Run every 1 second instead of 500ms
 ```
 
 ### No face detected?
+
 - Ensure good lighting
 - Face should be clearly visible
 - Try adjusting camera angle

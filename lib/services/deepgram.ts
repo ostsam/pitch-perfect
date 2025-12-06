@@ -1,4 +1,4 @@
-import { createClient } from '@deepgram/sdk';
+import { createClient } from "@deepgram/sdk";
 
 export class DeepgramService {
   /**
@@ -10,7 +10,9 @@ export class DeepgramService {
     const key = process.env.DEEPGRAM_API_KEY;
 
     if (!key) {
-      console.error("❌ DEEPGRAM_API_KEY is missing from environment variables");
+      console.error(
+        "❌ DEEPGRAM_API_KEY is missing from environment variables",
+      );
       throw new Error("Deepgram API key not configured");
     }
 

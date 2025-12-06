@@ -53,3 +53,4 @@ Session 2025-12-05: Utterance buffering—collect partial/final transcripts with
 
 Session 2025-12-05: UI tweak—camera panel now opens by default on medium and larger screens via matchMedia check.
 
+Session 2025-12-05: Tooling—added Prettier (format script) and aligned ESLint config indentation for consistency.

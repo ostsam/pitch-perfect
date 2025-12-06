@@ -28,7 +28,7 @@ export interface UseFaceDetectionOptions {
 
 export function useFaceDetection(
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  options: UseFaceDetectionOptions
+  options: UseFaceDetectionOptions,
 ) {
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [faceData, setFaceData] = useState<FaceData | null>(null);
@@ -40,12 +40,12 @@ export function useFaceDetection(
     async function loadModels() {
       try {
         const MODEL_URL = "/models"; // We'll put models in public/models
-        
+
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
         ]);
-        
+
         setIsModelLoaded(true);
       } catch (err) {
         console.error("Error loading face-api models:", err);
@@ -64,16 +64,19 @@ export function useFaceDetection(
 
     try {
       const detections = await faceapi
-        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions(),
+        )
         .withFaceExpressions();
 
       if (detections) {
         const emotions = detections.expressions as EmotionData;
-        
+
         // Find dominant emotion
         const emotionEntries = Object.entries(emotions);
-        const [dominantEmotion, dominantValue] = emotionEntries.reduce((max, entry) =>
-          entry[1] > max[1] ? entry : max
+        const [dominantEmotion, dominantValue] = emotionEntries.reduce(
+          (max, entry) => (entry[1] > max[1] ? entry : max),
         );
 
         const data: FaceData = {

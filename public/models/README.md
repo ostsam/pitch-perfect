@@ -9,6 +9,7 @@ This directory contains the pre-trained models for face-api.js:
 ## Detected Emotions
 
 The face expression model can detect 7 emotions:
+
 - Neutral
 - Happy
 - Sad
@@ -20,6 +21,7 @@ The face expression model can detect 7 emotions:
 ## Eye Contact Detection
 
 Eye contact is calculated using facial landmarks and classified as:
+
 - **Good**: Direct gaze, centered alignment
 - **Poor**: Slightly off-center or looking away
 - **None**: Face not detected
@@ -33,11 +35,13 @@ These models are automatically loaded by the `useFaceDetection` hook when the ca
 ## Re-download
 
 If models are corrupted or missing, run:
+
 ```bash
 npm run download-models
 ```
 
 Or manually:
+
 ```bash
 ./scripts/download-models.sh
 ```

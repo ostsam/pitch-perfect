@@ -1,23 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PdfService } from '@/lib/services/pdf';
-import { IntelligenceService } from '@/lib/services/openai';
+import { NextRequest, NextResponse } from "next/server";
+import { PdfService } from "@/lib/services/pdf";
+import { IntelligenceService } from "@/lib/services/openai";
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    if (file.type !== 'application/pdf') {
+    if (file.type !== "application/pdf") {
       return NextResponse.json(
-        { error: 'File must be a PDF' },
-        { status: 400 }
+        { error: "File must be a PDF" },
+        { status: 400 },
       );
     }
 
@@ -29,10 +26,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ text: fullText, pages, summary });
   } catch (error) {
-    console.error('Error processing PDF:', error);
+    console.error("Error processing PDF:", error);
     return NextResponse.json(
-      { error: 'Failed to process PDF' },
-      { status: 500 }
+      { error: "Failed to process PDF" },
+      { status: 500 },
     );
   }
 }

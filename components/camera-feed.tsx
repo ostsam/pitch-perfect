@@ -6,89 +6,89 @@ import { useFaceDetection, FaceData } from "@/hooks/use-face-detection";
 import { cn } from "@/lib/utils";
 
 interface CameraFeedProps {
-	active: boolean;
-	onFaceData?: (data: FaceData | null) => void;
+  active: boolean;
+  onFaceData?: (data: FaceData | null) => void;
 }
 
 export function CameraFeed({ active, onFaceData }: CameraFeedProps) {
-	const videoRef = useRef<HTMLVideoElement>(null);
-	const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
-	// Face detection hook
-	useFaceDetection(videoRef, {
-		enabled: active && hasPermission === true,
-		onFaceData,
-		detectionInterval: 500, // Detect every 500ms
-	});
+  // Face detection hook
+  useFaceDetection(videoRef, {
+    enabled: active && hasPermission === true,
+    onFaceData,
+    detectionInterval: 500, // Detect every 500ms
+  });
 
-	useEffect(() => {
-		let stream: MediaStream | null = null;
+  useEffect(() => {
+    let stream: MediaStream | null = null;
 
-		async function setupCamera() {
-			try {
-				stream = await navigator.mediaDevices.getUserMedia({
-					video: {
-						width: { ideal: 1280 },
-						height: { ideal: 720 },
-						facingMode: "user",
-					},
-					audio: false,
-				});
+    async function setupCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: "user",
+          },
+          audio: false,
+        });
 
-				if (videoRef.current) {
-					videoRef.current.srcObject = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
 
-					// Wait for video to be ready
-					videoRef.current.onloadedmetadata = () => {
-						videoRef.current
-							?.play()
-							.then(() => {
-								setHasPermission(true);
-							})
-							.catch((err) => {
-								console.error("❌ Error playing video:", err);
-							});
-					};
-				}
-			} catch (err) {
-				console.error("❌ Error accessing camera:", err);
-				setHasPermission(false);
-			}
-		}
+          // Wait for video to be ready
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current
+              ?.play()
+              .then(() => {
+                setHasPermission(true);
+              })
+              .catch((err) => {
+                console.error("❌ Error playing video:", err);
+              });
+          };
+        }
+      } catch (err) {
+        console.error("❌ Error accessing camera:", err);
+        setHasPermission(false);
+      }
+    }
 
-		setupCamera();
+    setupCamera();
 
-		return () => {
-			if (stream) {
-				stream.getTracks().forEach((track) => track.stop());
-			}
-		};
-	}, []);
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
 
-	return (
-		<div className="relative w-full h-full flex flex-col">
-			{/* Camera Container */}
-			<div className="relative flex-1 w-full h-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5">
-				<video
-					ref={videoRef}
-					autoPlay
-					playsInline
-					muted
-					className={cn(
-						"w-full h-full object-cover transform scale-x-[-1]",
-						hasPermission === false && "hidden"
-					)}
-				/>
+  return (
+    <div className="relative w-full h-full flex flex-col">
+      {/* Camera Container */}
+      <div className="relative flex-1 w-full h-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={cn(
+            "w-full h-full object-cover transform scale-x-[-1]",
+            hasPermission === false && "hidden",
+          )}
+        />
 
-				{hasPermission === false && (
-					<div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 gap-4 bg-zinc-900/50">
-						<div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center">
-							<CameraOff className="w-6 h-6" />
-						</div>
-						<p className="text-sm font-medium">Camera Access Required</p>
-					</div>
-				)}
-			</div>
-		</div>
-	);
+        {hasPermission === false && (
+          <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 gap-4 bg-zinc-900/50">
+            <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center">
+              <CameraOff className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-medium">Camera Access Required</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

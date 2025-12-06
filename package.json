@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
     "download-models": "./scripts/download-models.sh"
   },
   "dependencies": {
@@ -36,6 +37,9 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.1",
     "eslint-config-next": "16.0.7",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.4.2",
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.3"
   }
