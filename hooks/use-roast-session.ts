@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useCallback, MutableRefObject } from "react";
+import { feedbackStore, inferSectionTitle } from "@/lib/feedback-store";
 import type { FaceData } from "@/hooks/use-face-detection";
 
 export interface RoastMessage {
@@ -374,13 +375,29 @@ export function useRoastSession({
           emotionData,
           pageText,
           deckSummary,
-          previousRoasts: roastsRef.current.map((r) => r.text),
+          previousRoasts: roastsRef.current.slice(-5).map((r) => r.text),
         }),
       });
 
       const result = await res.json();
 
       if (result.shouldInterrupt && result.roastMessage) {
+        try {
+          feedbackStore.append({
+            pageNumber: currentPageRef.current,
+            roast: result.roastMessage,
+            transcript,
+            pageText,
+            deckSummary,
+            sectionTitle: inferSectionTitle(
+              undefined,
+              pageText,
+              currentPageRef.current,
+            ),
+          });
+        } catch (storeError) {
+          console.error("Feedback store append failed:", storeError);
+        }
         triggerRoast(result.roastMessage);
       }
     } catch (error) {
@@ -432,6 +449,9 @@ export function useRoastSession({
       mediaRecorderRef.current?.stop();
       return;
     }
+
+    // Start session tracking
+    feedbackStore.startSession();
 
     // Browser Audio Capability Check
     const checkAudioSupport = () => {

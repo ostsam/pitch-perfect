@@ -22,9 +22,10 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     const { fullText, pages } = await PdfService.extractText(buffer);
-    const summary = await IntelligenceService.summarizeDeck(fullText);
+    const { summary, sections } =
+      await IntelligenceService.summarizeDeck(pages);
 
-    return NextResponse.json({ text: fullText, pages, summary });
+    return NextResponse.json({ text: fullText, pages, summary, sections });
   } catch (error) {
     console.error("Error processing PDF:", error);
     return NextResponse.json(

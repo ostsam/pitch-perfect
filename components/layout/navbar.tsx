@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import { Aperture } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { SessionTimer } from "@/components/session-timer";
 
 interface NavbarProps {
   file: File | null;
@@ -11,6 +13,7 @@ interface NavbarProps {
   showCamera: boolean;
   onToggleCamera: () => void;
   onReset: () => void;
+  startTime?: number | null;
 }
 
 export function Navbar({
@@ -20,6 +23,7 @@ export function Navbar({
   showCamera,
   onToggleCamera,
   onReset,
+  startTime,
 }: NavbarProps) {
   return (
     <motion.header
@@ -38,6 +42,7 @@ export function Navbar({
 
       {file && (
         <div className="flex items-center gap-3">
+          {isRoasting && startTime && <SessionTimer startTime={startTime} />}
           <button
             onClick={onToggleRoasting}
             className={cn(
@@ -60,6 +65,12 @@ export function Navbar({
           >
             {showCamera ? "Hide Camera" : "Show Camera"}
           </button>
+          <Link
+            href="/feedback"
+            className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all flex items-center gap-2 border border-white/10 bg-black/40 text-white hover:bg-white/10"
+          >
+            View Report
+          </Link>
         </div>
       )}
     </motion.header>
