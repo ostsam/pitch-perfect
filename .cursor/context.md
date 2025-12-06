@@ -54,3 +54,8 @@ Session 2025-12-05: Utterance buffering—collect partial/final transcripts with
 Session 2025-12-05: UI tweak—camera panel now opens by default on medium and larger screens via matchMedia check.
 
 Session 2025-12-05: Tooling—added Prettier (format script) and aligned ESLint config indentation for consistency.
+Session 2025-12-06: Added feedback persistence layer (`lib/feedback-store.ts`) with localStorage-backed store and section/overall derivation helpers.
+Session 2025-12-06: Hooked roast lifecycle to append per-page feedback (page text, transcript, roast) in `use-roast-session`.
+Session 2025-12-06: Introduced `useFeedback` hook and `FinalFeedback` component to display sectional and overall summaries with drilldown and clear controls; rendered below workspace when a deck is loaded.
+Session 2025-12-06: Added `/feedback` page showing `FinalFeedback` with simulated session data; `FinalFeedback` now accepts optional session overrides and custom text for demo usage.
+Session 2025-12-06: Polished FinalFeedback UI (accent badges, stat cards, improved section layout, accent palette) and refreshed `/feedback` page background/hero copy for a more designed feel.
