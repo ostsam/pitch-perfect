@@ -7,6 +7,7 @@ export function usePdf() {
   const pdfTextRef = useRef<string>("");
   const pageTextsRef = useRef<string[]>([]);
   const deckSummaryRef = useRef<string>("");
+  const sectionsRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!file) {
@@ -33,6 +34,7 @@ export function usePdf() {
         if (data.text) {
           pdfTextRef.current = data.text; // full deck text
           deckSummaryRef.current = data.summary || data.text.slice(0, 1200);
+          sectionsRef.current = data.sections || [];
           console.log(
             "📄 PDF Context Loaded:",
             data.text.slice(0, 100) + "...",
@@ -57,5 +59,6 @@ export function usePdf() {
     pdfTextRef,
     pageTextsRef,
     deckSummaryRef,
+    sectionsRef,
   };
 }

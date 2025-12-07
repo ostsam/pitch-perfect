@@ -2,25 +2,42 @@
 
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { usePdf } from "@/hooks/use-pdf";
 import { useAudioVisualizer } from "@/hooks/use-audio-visualizer";
 import { useFaceStore } from "@/hooks/use-face-store";
+import { useFeedback } from "@/hooks/use-feedback";
 import { useRoastSession } from "@/hooks/use-roast-session";
 import { Navbar } from "@/components/layout/navbar";
 import { HeroStage } from "@/components/layout/hero-stage";
 import { WorkspaceStage } from "@/components/layout/workspace-stage";
 
 export default function Home() {
+  const router = useRouter();
   const [isRoasting, setIsRoasting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const currentPageRef = useRef<number>(1);
 
   // Hooks
-  const { file, setFile, pdfTextRef, pageTextsRef, deckSummaryRef } = usePdf();
+  const {
+    file,
+    setFile,
+    pdfTextRef,
+    pageTextsRef,
+    deckSummaryRef,
+    sectionsRef,
+  } = usePdf();
   const { micVolume, startAudioAnalysis, stopAudioAnalysis } =
     useAudioVisualizer();
   const { currentFaceData, faceDataRef, handleFaceData } = useFaceStore();
+  const { session } = useFeedback();
+
+  const handleSessionEnd = () => {
+    stopAudioAnalysis();
+    // Auto-redirect to feedback page when session ends
+    router.push("/feedback");
+  };
 
   useRoastSession({
     file,
@@ -32,7 +49,7 @@ export default function Home() {
     faceDataRef,
     currentPageRef,
     onMicStreamCreated: startAudioAnalysis,
-    onSessionEnd: stopAudioAnalysis,
+    onSessionEnd: handleSessionEnd,
   });
 
   useEffect(() => {
@@ -74,6 +91,7 @@ export default function Home() {
         showCamera={showCamera}
         onToggleCamera={() => setShowCamera((prev) => !prev)}
         onReset={handleReset}
+        startTime={session.startTime}
       />
 
       {/* Content Stage */}
@@ -82,15 +100,17 @@ export default function Home() {
           {!file ? (
             <HeroStage onFileSelect={setFile} />
           ) : (
-            <WorkspaceStage
-              file={file}
-              onPageChange={handlePageChange}
-              isRoasting={isRoasting}
-              micVolume={micVolume}
-              showCamera={showCamera}
-              currentFaceData={currentFaceData}
-              onFaceData={handleFaceData}
-            />
+            <div className="flex-1 min-h-0 flex flex-col relative">
+              <WorkspaceStage
+                file={file}
+                onPageChange={handlePageChange}
+                isRoasting={isRoasting}
+                micVolume={micVolume}
+                showCamera={showCamera}
+                currentFaceData={currentFaceData}
+                onFaceData={handleFaceData}
+              />
+            </div>
           )}
         </AnimatePresence>
       </div>

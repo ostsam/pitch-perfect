@@ -18,30 +18,59 @@ export interface PitchEvaluationResult {
   roastMessage: string | null;
 }
 
+export interface SummaryResult {
+  summary: string;
+  sections: { title: string; startPage: number; endPage: number }[];
+}
+
 export class IntelligenceService {
-  static async summarizeDeck(text: string): Promise<string> {
+  static async summarizeDeck(pages: string[]): Promise<SummaryResult> {
+    const formattedPages = pages
+      .map((text, i) => `Page ${i + 1}:\n${text.slice(0, 1000)}`)
+      .join("\n\n");
+
     const prompt = `
-      Summarize this pitch deck text into concise bullets (max 200 words).
-      Focus on: problem, solution, market, traction, business model, team, ask.
-      Keep it compact and factual.
+      You are an expert pitch deck analyst.
+      Analyze the provided pitch deck content (organized by page number).
+      
+      Tasks:
+      1. Create a concise, professional summary (max 200 words) covering: Problem, Solution, Market, Business Model, Traction, Team, and Ask.
+      2. Segment the deck into logical sections (e.g., "Problem", "Solution", "Market", "Financials").
+      
+      Return a JSON object with this structure:
+      {
+        "summary": "string",
+        "sections": [
+          { "title": "string", "startPage": number, "endPage": number }
+        ]
+      }
+      
+      Rules:
+      - 'startPage' and 'endPage' must correspond to the provided Page numbers.
+      - Ensure every page is covered in a section.
+      - Section titles should be standard pitch deck categories where possible.
     `;
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: prompt },
-          { role: "user", content: text.slice(0, 12000) },
+          { role: "user", content: formattedPages },
         ],
-        max_tokens: 400,
-        temperature: 0.4,
+        response_format: { type: "json_object" },
+        temperature: 0.2,
       });
 
-      const summary = completion.choices[0].message.content || "";
-      return summary.trim();
+      const content = completion.choices[0].message.content || "{}";
+      const parsed = JSON.parse(content);
+      return {
+        summary: parsed.summary || "",
+        sections: parsed.sections || [],
+      };
     } catch (error) {
       console.error("Error summarizing deck:", error);
-      return text.slice(0, 1200);
+      return { summary: pages.join(" ").slice(0, 1200), sections: [] };
     }
   }
 
@@ -124,7 +153,7 @@ export class IntelligenceService {
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
