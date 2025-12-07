@@ -101,7 +101,7 @@ export const feedbackStore: FeedbackStore = {
       sectionTitle: inferSectionTitle(
         input.sectionTitle,
         input.pageText,
-        input.pageNumber,
+        input.pageNumber
       ),
       ...input,
     };
@@ -132,7 +132,7 @@ export const feedbackStore: FeedbackStore = {
 export function inferSectionTitle(
   provided: string | undefined,
   pageText: string | undefined,
-  pageNumber: number,
+  pageNumber: number
 ): string {
   if (provided?.trim()) return provided.trim();
   if (pageText) {
@@ -150,7 +150,7 @@ export function inferSectionTitle(
 
 export function deriveSectionSummaries(
   session: FeedbackSession,
-  sectionsMap?: Array<{ title: string; startPage: number; endPage: number }>,
+  sectionsMap?: Array<{ title: string; startPage: number; endPage: number }>
 ): SectionSummary[] {
   // If we have a sections map, pre-fill the map with these sections
   // to ensure they appear even if empty, or just use them for grouping.
@@ -165,7 +165,7 @@ export function deriveSectionSummaries(
         sectionTitle: section.title,
         pages: Array.from(
           { length: section.endPage - section.startPage + 1 },
-          (_, i) => section.startPage + i,
+          (_, i) => section.startPage + i
         ),
         entries: [],
         latestAt: 0,
@@ -180,7 +180,7 @@ export function deriveSectionSummaries(
     // If we have a map, look up which section this page belongs to
     if (sectionsMap) {
       const match = sectionsMap.find(
-        (s) => entry.pageNumber >= s.startPage && entry.pageNumber <= s.endPage,
+        (s) => entry.pageNumber >= s.startPage && entry.pageNumber <= s.endPage
       );
       if (match) {
         sectionTitle = match.title;

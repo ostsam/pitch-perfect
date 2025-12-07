@@ -38,7 +38,7 @@ export function useAudioVisualizer() {
       analyser.fftSize = 512;
       const bufferLength = analyser.frequencyBinCount;
       const dataArray = new Uint8Array(
-        new ArrayBuffer(bufferLength),
+        new ArrayBuffer(bufferLength)
       ) as Uint8Array<ArrayBuffer>;
 
       const source = audioCtx.createMediaStreamSource(stream);
@@ -66,7 +66,7 @@ export function useAudioVisualizer() {
 
       rafRef.current = requestAnimationFrame(updateVolume);
     },
-    [stopAudioAnalysis],
+    [stopAudioAnalysis]
   );
 
   useEffect(() => {

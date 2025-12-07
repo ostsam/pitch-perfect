@@ -11,7 +11,7 @@ const PdfViewer = dynamic(
   {
     ssr: false,
     loading: () => null,
-  },
+  }
 );
 
 interface WorkspaceStageProps {

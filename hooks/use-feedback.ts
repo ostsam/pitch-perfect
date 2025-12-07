@@ -19,7 +19,7 @@ export function useFeedback() {
 
   const sectionSummaries = useMemo(
     () => deriveSectionSummaries(session),
-    [session],
+    [session]
   );
 
   const overall = useMemo(() => deriveOverallSummary(session), [session]);
