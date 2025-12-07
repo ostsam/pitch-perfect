@@ -7,7 +7,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { ScannerOverlay } from "@/components/landing/scanner-overlay";
 import { InteractiveGrid } from "@/components/landing/interactive-grid";
 import { FaceAnim } from "@/components/landing/face-anim";
-import { Button } from "@/components/ui/button";
+import { AudioSpectrometer } from "@/components/landing/audio-spectrometer";
 
 export default function LandingPage() {
   const { scrollYProgress } = useScroll();
@@ -141,33 +141,7 @@ export default function LandingPage() {
               analysis. We catch every stumble, stutter, and hesitation.
             </p>
           </div>
-          <div className="h-[400px] border border-zinc-800 bg-zinc-900/20 relative overflow-hidden flex items-end justify-between px-4 pb-12 gap-[2px] md:order-1">
-            {/* Faux Spectrogram */}
-            <div className="absolute top-4 left-4 text-xs font-mono text-zinc-500">
-              FREQ_ANALYSIS // HZ
-            </div>
-            {[...Array(40)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="w-full bg-zinc-500/50"
-                animate={{
-                  height: [
-                    `${Math.random() * 20 + 10}%`,
-                    `${Math.random() * 80 + 10}%`,
-                    `${Math.random() * 40 + 10}%`,
-                  ],
-                  opacity: [0.2, 0.8, 0.2],
-                }}
-                transition={{
-                  duration: Math.random() * 1 + 0.5,
-                  repeat: Infinity,
-                  repeatType: "mirror",
-                  ease: "easeInOut",
-                  delay: i * 0.02,
-                }}
-              />
-            ))}
-          </div>
+          <AudioSpectrometer className="md:order-1" />
         </section>
 
         {/* Module 03: The Roast */}
