@@ -59,3 +59,4 @@ Session 2025-12-06: Hooked roast lifecycle to append per-page feedback (page tex
 Session 2025-12-06: Introduced `useFeedback` hook and `FinalFeedback` component to display sectional and overall summaries with drilldown and clear controls; rendered below workspace when a deck is loaded.
 Session 2025-12-06: Added `/feedback` page showing `FinalFeedback` with simulated session data; `FinalFeedback` now accepts optional session overrides and custom text for demo usage.
 Session 2025-12-06: Polished FinalFeedback UI (accent badges, stat cards, improved section layout, accent palette) and refreshed `/feedback` page background/hero copy for a more designed feel.
+Session 2025-12-07: Aligned formatting—added Prettier config with explicit defaults, .editorconfig (2-space spaces, LF), and VS Code settings to use Prettier on save; ESLint keeps prettier integration.
