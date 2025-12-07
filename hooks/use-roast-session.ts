@@ -392,7 +392,7 @@ export function useRoastSession({
             sectionTitle: inferSectionTitle(
               undefined,
               pageText,
-              currentPageRef.current,
+              currentPageRef.current
             ),
           });
         } catch (storeError) {
@@ -427,7 +427,7 @@ export function useRoastSession({
         analyzePitch();
       }, delayMs);
     },
-    [analyzePitch],
+    [analyzePitch]
   );
 
   const startUtteranceTimer = useCallback(
@@ -438,7 +438,7 @@ export function useRoastSession({
         scheduleAnalysis(0);
       }, delayMs);
     },
-    [clearUtteranceTimer, scheduleAnalysis],
+    [clearUtteranceTimer, scheduleAnalysis]
   );
 
   // Deepgram & Microphone Setup
@@ -456,7 +456,7 @@ export function useRoastSession({
     // Browser Audio Capability Check
     const checkAudioSupport = () => {
       const opusSupported = MediaSource.isTypeSupported(
-        'audio/webm; codecs="opus"',
+        'audio/webm; codecs="opus"'
       );
       const mp3Supported = MediaSource.isTypeSupported("audio/mpeg");
       console.log("🎧 Audio Support:", {
@@ -477,7 +477,7 @@ export function useRoastSession({
         // B. Setup WebSocket
         const socket = new WebSocket(
           "wss://api.deepgram.com/v1/listen?smart_format=true&model=nova-2&language=en-US",
-          ["token", key],
+          ["token", key]
         );
 
         socket.onopen = () => {

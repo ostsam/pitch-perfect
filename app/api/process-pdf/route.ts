@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (file.type !== "application/pdf") {
       return NextResponse.json(
         { error: "File must be a PDF" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     console.error("Error processing PDF:", error);
     return NextResponse.json(
       { error: "Failed to process PDF" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

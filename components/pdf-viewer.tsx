@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 // Set worker source
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
+  import.meta.url
 ).toString();
 
 interface PdfViewerProps {

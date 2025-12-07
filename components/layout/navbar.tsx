@@ -7,20 +7,20 @@ import { cn } from "@/lib/utils";
 import { SessionTimer } from "@/components/session-timer";
 
 interface NavbarProps {
-  file: File | null;
-  isRoasting: boolean;
-  onToggleRoasting: () => void;
-  showCamera: boolean;
-  onToggleCamera: () => void;
-  onReset: () => void;
+  file?: File | null;
+  isRoasting?: boolean;
+  onToggleRoasting?: () => void;
+  showCamera?: boolean;
+  onToggleCamera?: () => void;
+  onReset?: () => void;
   startTime?: number | null;
 }
 
 export function Navbar({
   file,
-  isRoasting,
+  isRoasting = false,
   onToggleRoasting,
-  showCamera,
+  showCamera = false,
   onToggleCamera,
   onReset,
   startTime,
@@ -31,14 +31,28 @@ export function Navbar({
       animate={{ y: 0, opacity: 1 }}
       className="relative z-50 flex-none px-8 py-4 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm"
     >
-      <div className="flex items-center gap-3 cursor-pointer" onClick={onReset}>
-        <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center border border-white/10">
-          <Aperture className="w-3 h-3 text-white" />
+      {onReset ? (
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={onReset}
+        >
+          <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center border border-white/10">
+            <Aperture className="w-3 h-3 text-white" />
+          </div>
+          <span className="font-medium text-sm tracking-wide text-zinc-300">
+            Pitch Perfect
+          </span>
         </div>
-        <span className="font-medium text-sm tracking-wide text-zinc-300">
-          Pitch Perfect
-        </span>
-      </div>
+      ) : (
+        <Link href="/" className="flex items-center gap-3 cursor-pointer">
+          <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center border border-white/10">
+            <Aperture className="w-3 h-3 text-white" />
+          </div>
+          <span className="font-medium text-sm tracking-wide text-zinc-300">
+            Pitch Perfect
+          </span>
+        </Link>
+      )}
 
       {file && (
         <div className="flex items-center gap-3">
@@ -49,7 +63,7 @@ export function Navbar({
               "px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2",
               isRoasting
                 ? "bg-red-600 text-white hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)]"
-                : "bg-white text-black hover:bg-zinc-200",
+                : "bg-white text-black hover:bg-zinc-200"
             )}
           >
             {isRoasting ? "Live Session" : "Start Session"}
@@ -60,7 +74,7 @@ export function Navbar({
               "px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all flex items-center gap-2 border border-white/10",
               showCamera
                 ? "bg-white text-black hover:bg-zinc-200"
-                : "bg-black/40 text-white hover:bg-white/10",
+                : "bg-black/40 text-white hover:bg-white/10"
             )}
           >
             {showCamera ? "Hide Camera" : "Show Camera"}

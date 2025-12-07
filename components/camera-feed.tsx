@@ -76,7 +76,7 @@ export function CameraFeed({ active, onFaceData }: CameraFeedProps) {
           muted
           className={cn(
             "w-full h-full object-cover transform scale-x-[-1]",
-            hasPermission === false && "hidden",
+            hasPermission === false && "hidden"
           )}
         />
 

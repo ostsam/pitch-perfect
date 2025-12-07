@@ -105,7 +105,7 @@ const handleFaceData = (data: FaceData | null) => {
           eyeContact: data.eyeContact,
           timestamp: data.detectionTime,
         },
-      }),
+      })
     );
   }
 };

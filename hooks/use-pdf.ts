@@ -37,7 +37,7 @@ export function usePdf() {
           sectionsRef.current = data.sections || [];
           console.log(
             "📄 PDF Context Loaded:",
-            data.text.slice(0, 100) + "...",
+            data.text.slice(0, 100) + "..."
           );
         }
         if (Array.isArray(data.pages)) {

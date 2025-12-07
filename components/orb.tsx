@@ -49,7 +49,7 @@ export function Orb({
           "rounded-full blur-md transition-colors duration-500",
           active
             ? "bg-blue-500 shadow-[0_0_100px_rgba(59,130,246,0.6)]"
-            : "bg-zinc-800 shadow-[0_0_20px_rgba(255,255,255,0.1)]",
+            : "bg-zinc-800 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
         )}
       />
 
@@ -65,7 +65,7 @@ export function Orb({
           "absolute",
           sizeClass,
           "rounded-full border transition-colors duration-500",
-          active ? "border-blue-400" : "border-zinc-700",
+          active ? "border-blue-400" : "border-zinc-700"
         )}
       />
 
@@ -80,7 +80,7 @@ export function Orb({
           "absolute",
           sizeClass,
           "rounded-full border border-dashed transition-colors duration-500",
-          active ? "border-indigo-400" : "border-zinc-800",
+          active ? "border-indigo-400" : "border-zinc-800"
         )}
       />
 

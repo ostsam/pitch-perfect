@@ -23,7 +23,6 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* App-like feel */
 }
 
 /* Cinematic Grain */
@@ -72,4 +71,17 @@ body::after {
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.05),
     0 20px 50px -10px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes scan {
+  0% {
+    top: -10%;
+  }
+  100% {
+    top: 110%;
+  }
+}
+
+.animate-scan {
+  animation: scan 3s linear infinite;
 }
