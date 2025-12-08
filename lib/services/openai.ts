@@ -78,7 +78,7 @@ export class IntelligenceService {
    * Analyzes the pitch state and decides whether to interrupt.
    */
   static async evaluatePitch(
-    input: PitchEvaluationInput
+    input: PitchEvaluationInput,
   ): Promise<PitchEvaluationResult> {
     const {
       transcript,

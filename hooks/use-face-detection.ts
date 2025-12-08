@@ -28,7 +28,7 @@ export interface UseFaceDetectionOptions {
 
 export function useFaceDetection(
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  options: UseFaceDetectionOptions
+  options: UseFaceDetectionOptions,
 ) {
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [faceData, setFaceData] = useState<FaceData | null>(null);
@@ -66,7 +66,7 @@ export function useFaceDetection(
       const detections = await faceapi
         .detectSingleFace(
           videoRef.current,
-          new faceapi.TinyFaceDetectorOptions()
+          new faceapi.TinyFaceDetectorOptions(),
         )
         .withFaceExpressions();
 
@@ -76,7 +76,7 @@ export function useFaceDetection(
         // Find dominant emotion
         const emotionEntries = Object.entries(emotions);
         const [dominantEmotion, dominantValue] = emotionEntries.reduce(
-          (max, entry) => (entry[1] > max[1] ? entry : max)
+          (max, entry) => (entry[1] > max[1] ? entry : max),
         );
 
         const data: FaceData = {

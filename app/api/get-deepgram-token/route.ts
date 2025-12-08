@@ -11,7 +11,7 @@ export async function GET() {
     console.error("Error getting Deepgram token:", error);
     return NextResponse.json(
       { error: "Failed to generate credentials" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

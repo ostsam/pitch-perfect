@@ -43,7 +43,7 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
         }, 1500); // Longer, more dramatic pause
       }
     },
-    [onFileSelect]
+    [onFileSelect],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -70,7 +70,7 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
           "group transition-all duration-500 ease-out",
           isDragActive
             ? "scale-[1.02] border-blue-500/50"
-            : "hover:border-white/20"
+            : "hover:border-white/20",
         )}
       >
         <input {...getInputProps()} />
@@ -124,7 +124,7 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
                     "w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500",
                     isDragActive
                       ? "bg-blue-500/20 text-blue-400 shadow-[0_0_40px_-10px_rgba(59,130,246,0.5)]"
-                      : "bg-white/5 text-zinc-400 group-hover:bg-white/10 group-hover:text-white shadow-2xl"
+                      : "bg-white/5 text-zinc-400 group-hover:bg-white/10 group-hover:text-white shadow-2xl",
                   )}
                 >
                   {isDragActive ? (

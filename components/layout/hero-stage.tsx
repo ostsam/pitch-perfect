@@ -17,16 +17,6 @@ export function HeroStage({ onFileSelect }: HeroStageProps) {
       transition={{ duration: 0.5 }}
       className="flex-1 flex flex-col items-center justify-center p-6 relative min-h-0 overflow-auto"
     >
-      <div className="text-center space-y-6 max-w-4xl mb-12 relative z-20">
-        <motion.h1
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white via-white to-white/40"
-        >
-          Pitch like your life depends on it.
-        </motion.h1>
-      </div>
-
       <motion.div
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

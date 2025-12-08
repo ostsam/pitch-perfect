@@ -7,7 +7,7 @@ export class PdfService {
    * @returns The extracted text content.
    */
   static async extractText(
-    buffer: Buffer
+    buffer: Buffer,
   ): Promise<{ fullText: string; pages: string[] }> {
     return new Promise((resolve, reject) => {
       const pdfParser = new PDFParser(null, true); // true = Enable raw text parsing support
@@ -69,7 +69,7 @@ export class PdfService {
                                 typeof (r as { T?: unknown }).T === "string"
                               ) {
                                 return decodeURIComponent(
-                                  (r as { T: string }).T
+                                  (r as { T: string }).T,
                                 );
                               }
                               return "";
@@ -82,7 +82,7 @@ export class PdfService {
                     return pageText;
                   }
                   return "";
-                }
+                },
               );
             }
           }
