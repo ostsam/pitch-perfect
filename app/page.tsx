@@ -117,7 +117,7 @@ export default function LandingPage() {
               know when you&apos;re nervous before you do.
             </p>
           </div>
-          <div className="h-[400px] w-full border border-zinc-800 bg-zinc-900/20 relative overflow-hidden group md:ml-20">
+          <div className="h-[400px] w-full border border-zinc-800 bg-zinc-900/20 relative overflow-hidden group">
             <div className="absolute inset-0 bg-grid-white/[0.02]" />
             {/* Faux Vision UI */}
             <div className="absolute top-4 left-4 text-xs font-mono text-red-500">
