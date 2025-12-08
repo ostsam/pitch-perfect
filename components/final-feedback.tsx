@@ -46,7 +46,7 @@ export function FinalFeedback({
 
   // Default to first section expanded only, or all if few
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    () => new Set(sectionSummaries.map((s) => s.sectionTitle))
+    () => new Set(sectionSummaries.map((s) => s.sectionTitle)),
   );
 
   const hasFeedback = session.entries.length > 0;
@@ -130,8 +130,8 @@ export function FinalFeedback({
                 ? Math.max(
                     1,
                     Math.ceil(
-                      (overall.latestAt - session.startTime) / 1000 / 60
-                    )
+                      (overall.latestAt - session.startTime) / 1000 / 60,
+                    ),
                   ) + "m"
                 : "-"
             }
@@ -209,7 +209,7 @@ function SectionItem({
           <ChevronDown
             className={cn(
               "w-4 h-4 text-zinc-600 transition-transform duration-200",
-              isExpanded && "rotate-180 text-zinc-400"
+              isExpanded && "rotate-180 text-zinc-400",
             )}
           />
         </div>

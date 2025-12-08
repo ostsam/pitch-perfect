@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (!pageText && !deckSummary && !pdfContext) {
       return NextResponse.json(
         { error: "PDF context is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     console.error("Error analyzing pitch:", error);
     return NextResponse.json(
       { error: "Failed to analyze pitch" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

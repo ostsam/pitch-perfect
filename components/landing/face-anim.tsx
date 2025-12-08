@@ -14,7 +14,7 @@ export function FaceAnim() {
     const blinkTrigger = () => {
       setBlink(true);
       setTimeout(() => setBlink(false), 150);
-      const nextBlink = Math.random() * 500 + 800;
+      const nextBlink = Math.random() * 1000 + 2000;
       setTimeout(blinkTrigger, nextBlink);
     };
     const timeout = setTimeout(blinkTrigger, 2000);

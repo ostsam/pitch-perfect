@@ -1,10 +1,10 @@
+/* eslint-disable prettier/prettier */
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Eye, Mic, Activity, FileText } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
-import { ScannerOverlay } from "@/components/landing/scanner-overlay";
 import { InteractiveGrid } from "@/components/landing/interactive-grid";
 import { FaceAnim } from "@/components/landing/face-anim";
 import { AudioSpectrometer } from "@/components/landing/audio-spectrometer";
@@ -25,7 +25,6 @@ export default function LandingPage() {
         }}
       />
 
-      <ScannerOverlay />
       <InteractiveGrid />
 
       <Navbar />
@@ -34,45 +33,64 @@ export default function LandingPage() {
       <section className="relative z-10 h-screen flex flex-col items-center justify-center overflow-hidden">
         <motion.div
           style={{ opacity, scale }}
-          className="text-center space-y-2 relative"
+          className="relative w-full max-w-6xl mx-auto px-6 flex flex-col items-center text-center gap-10"
         >
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="font-mono text-xs tracking-[0.2em] text-red-500 uppercase">
+          {/* Frame accents */}
+          <div className="pointer-events-none absolute inset-x-8 top-12 border-t border-white/5" />
+          <div className="pointer-events-none absolute inset-x-8 bottom-14 border-t border-white/5" />
+
+          <div className="flex items-center justify-center gap-3">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+            <span className="font-mono text-xs tracking-[0.3em] text-red-400 uppercase">
               System Active
             </span>
           </div>
 
-          <h1 className="text-7xl md:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-white via-white to-transparent mix-blend-overlay">
-            DO THEY <br />
-            BELIEVE YOU?
-          </h1>
-
-          <div className="flex flex-col items-center gap-1 font-mono text-zinc-500 mt-8 text-xs tracking-widest uppercase">
-            <p>Scanning Micro-Expressions... [READY]</p>
-            <p>Audio Spectrum Analysis... [READY]</p>
-            <p>Live Sentiment Tracking... [READY]</p>
+          <div className="relative space-y-3">
+            <div className="absolute inset-0 bg-linear-to-b from-transparent via-white/5 to-transparent blur-3xl opacity-40" />
+            <p className="relative font-mono text-sm tracking-[0.2em] text-zinc-500 uppercase">
+              Investor Reality Check
+            </p>
+            <h1 className="relative text-6xl md:text-8xl lg:text-9xl font-black leading-[0.9] tracking-[-0.035em] text-transparent bg-clip-text bg-linear-to-b from-white via-zinc-200 to-zinc-500">
+              Pitch like your <br className="hidden md:block" />
+              life depends on it
+            </h1>
           </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 100 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.8 }}
-          className="absolute bottom-24 left-0 right-0 flex justify-center"
-        >
-          <Link href="/pitch">
-            <button className="group relative px-8 py-4 bg-transparent border border-white/20 hover:bg-white/5 transition-all duration-300">
-              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors" />
-              <div className="absolute top-0 left-0 w-2 h-2 border-l-2 border-t-2 border-white transition-all group-hover:w-full group-hover:h-full group-hover:border-white/50" />
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-white transition-all group-hover:w-full group-hover:h-full group-hover:border-white/50" />
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 font-mono text-[11px] md:text-xs tracking-[0.3em] text-zinc-400 uppercase">
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+              Scanning Micro-Expressions · Ready
+            </span>
+            <span className="hidden md:inline text-zinc-700">/</span>
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+              Audio Spectrum Analysis · Ready
+            </span>
+            <span className="hidden md:inline text-zinc-700">/</span>
+            <span className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+              Live Sentiment Tracking · Ready
+            </span>
+          </div>
 
-              <span className="relative font-mono text-lg tracking-widest flex items-center gap-4">
-                INITIALIZE_SESSION
-                <ArrowRight className="w-4 h-4" />
-              </span>
-            </button>
-          </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 36 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.7 }}
+            className="flex justify-center"
+          >
+            <Link href="/pitch">
+              <button className="group relative px-8 py-3 bg-white text-black font-mono text-sm tracking-[0.2em] uppercase overflow-hidden border border-white/10 hover:border-white/30 transition duration-300 shadow-[0_10px_40px_rgba(0,0,0,0.2)]">
+                <div className="absolute inset-0 bg-white/10 group-hover:bg-white/16 transition" />
+                <div className="absolute inset-[-120%] bg-[radial-gradient(circle,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_55%)] animate-[spin_9s_linear_infinite]" />
+                <span className="relative flex items-center gap-2">
+                  Initialize Session
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+              </button>
+            </Link>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -99,7 +117,7 @@ export default function LandingPage() {
               know when you&apos;re nervous before you do.
             </p>
           </div>
-          <div className="h-[400px] border border-zinc-800 bg-zinc-900/20 relative overflow-hidden group ml-20">
+          <div className="h-[400px] w-full border border-zinc-800 bg-zinc-900/20 relative overflow-hidden group md:ml-20">
             <div className="absolute inset-0 bg-grid-white/[0.02]" />
             {/* Faux Vision UI */}
             <div className="absolute top-4 left-4 text-xs font-mono text-red-500">
@@ -156,12 +174,12 @@ export default function LandingPage() {
               <span className="text-red-500">Verdict.</span>
             </h2>
             <p className="text-lg text-zinc-400 font-mono leading-relaxed">
-              "You lost me at slide 3. Your enthusiasm is there, but your data
-              is weak."
+              &quot;You lost me at slide 3. Your enthusiasm is there, but your
+              data is weak.&quot;
             </p>
             <p className="text-zinc-400">
               Instant, AI-generated feedback that tells you exactly what an
-              investor is thinking but won't say to your face.
+              investor is thinking but won&apos;t say to your face.
             </p>
           </div>
           <div className="h-[400px] border border-zinc-800 bg-zinc-900/20 relative p-8 font-mono text-xs md:text-sm text-zinc-400 overflow-hidden flex flex-col justify-between">
